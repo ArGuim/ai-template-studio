@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Link2, Sparkles, Loader2, Package, DollarSign, FileText, Image as ImageIcon } from "lucide-react";
+import { Link2, Sparkles, Loader2, Package, DollarSign, FileText, Image as ImageIcon, AlertCircle } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface ProductData {
   name: string;
@@ -19,6 +21,7 @@ const ProductInput = ({ onProductReady }: ProductInputProps) => {
   const [link, setLink] = useState("");
   const [isExtracting, setIsExtracting] = useState(false);
   const [showManual, setShowManual] = useState(false);
+  const [extractError, setExtractError] = useState<string | null>(null);
   const [manual, setManual] = useState<ProductData>({
     name: "",
     price: "",
@@ -26,20 +29,54 @@ const ProductInput = ({ onProductReady }: ProductInputProps) => {
     imageUrl: "",
     link: "",
   });
+  const { toast } = useToast();
 
   const extractFromLink = async () => {
+    if (!link.trim()) {
+      toast({ title: "Cole um link", description: "Insira o link do produto para extrair.", variant: "destructive" });
+      return;
+    }
+
     setIsExtracting(true);
-    // Simulate AI extraction
-    await new Promise((r) => setTimeout(r, 2000));
-    const extracted: ProductData = {
-      name: "Fone Bluetooth Premium TWS",
-      price: "R$ 89,90",
-      description: "Fone de ouvido sem fio com cancelamento de ruído ativo, bateria de 30h e resistência à água IPX5.",
-      imageUrl: "https://images.unsplash.com/photo-1590658268037-6bf12f032f55?w=400&h=400&fit=crop",
-      link: link || "https://shopee.com.br/product/123",
-    };
-    setIsExtracting(false);
-    onProductReady(extracted);
+    setExtractError(null);
+
+    try {
+      const { data, error } = await supabase.functions.invoke("extract-product", {
+        body: { url: link.trim() },
+      });
+
+      if (error) throw error;
+
+      if (data?.error) {
+        setExtractError(data.error);
+        toast({ title: "Erro na extração", description: data.error, variant: "destructive" });
+        setShowManual(true);
+        return;
+      }
+
+      if (data?.success && data?.product) {
+        const product = data.product;
+        toast({ title: "✨ Dados extraídos!", description: `Produto: ${product.name}` });
+        onProductReady({
+          name: product.name,
+          price: product.price,
+          description: product.description,
+          imageUrl: product.imageUrl || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop",
+          link: product.link || link.trim(),
+        });
+      }
+    } catch (err) {
+      console.error("Extract error:", err);
+      setExtractError("Não foi possível extrair os dados. Preencha manualmente.");
+      setShowManual(true);
+      toast({
+        title: "Erro na extração",
+        description: "Tente novamente ou preencha manualmente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsExtracting(false);
+    }
   };
 
   const submitManual = () => {
@@ -56,13 +93,13 @@ const ProductInput = ({ onProductReady }: ProductInputProps) => {
       <div className="text-center space-y-2">
         <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-sm text-primary font-medium">
           <Sparkles className="w-4 h-4" />
-          Modo Rápido
+          Extração Real com IA
         </div>
         <h1 className="text-3xl font-bold tracking-tight" style={{ lineHeight: "1.1" }}>
           Cole o link e a IA faz o resto
         </h1>
         <p className="text-muted-foreground max-w-md mx-auto">
-          Extraímos dados do produto automaticamente e geramos templates prontos para divulgação.
+          Extraímos dados do produto automaticamente via scraping + IA e geramos templates prontos.
         </p>
       </div>
 
@@ -73,8 +110,16 @@ const ProductInput = ({ onProductReady }: ProductInputProps) => {
           onChange={(e) => setLink(e.target.value)}
           placeholder="Cole o link do produto (Amazon, Shopee, Mercado Livre...)"
           className="pl-12 h-14 text-base bg-secondary border-border/50 focus:border-primary/50 rounded-xl"
+          onKeyDown={(e) => e.key === "Enter" && extractFromLink()}
         />
       </div>
+
+      {extractError && (
+        <div className="max-w-lg mx-auto flex items-start gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
+          <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+          <span>{extractError}</span>
+        </div>
+      )}
 
       <div className="flex flex-col items-center gap-3">
         <Button
@@ -87,7 +132,7 @@ const ProductInput = ({ onProductReady }: ProductInputProps) => {
           {isExtracting ? (
             <>
               <Loader2 className="w-5 h-5 animate-spin" />
-              Extraindo dados...
+              Extraindo dados reais...
             </>
           ) : (
             <>
