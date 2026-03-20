@@ -24,6 +24,7 @@ interface GeneratedContent {
 }
 
 const Index = () => {
+  const navigate = useNavigate();
   const [step, setStep] = useState<Step>("input");
   const [product, setProduct] = useState<ProductData | null>(null);
   const [content, setContent] = useState<GeneratedContent | null>(null);
