@@ -1,8 +1,9 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import ProductInput from "@/components/ProductInput";
 import ContentGenerator from "@/components/ContentGenerator";
 import TemplatePreview from "@/components/TemplatePreview";
-import { Sparkles, Zap } from "lucide-react";
+import { Sparkles, Zap, History } from "lucide-react";
 
 type Step = "input" | "content" | "template";
 
