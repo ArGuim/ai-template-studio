@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sparkles, RefreshCw, Copy, Check, Hash, MessageSquare, Megaphone } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface ProductData {
   name: string;
@@ -32,67 +34,48 @@ const toneOptions: { value: ToneOfVoice; label: string; emoji: string }[] = [
   { value: "divertido", label: "Divertido", emoji: "🎉" },
 ];
 
-const contentByTone: Record<ToneOfVoice, (name: string, price: string) => GeneratedContent> = {
-  urgente: (name, price) => ({
-    titles: [
-      `⚡ ÚLTIMAS UNIDADES! ${name} por apenas ${price}`,
-      `🔥 OFERTA RELÂMPAGO: ${name} com desconto IMPERDÍVEL`,
-      `⏰ CORRE! ${name} pelo menor preço do ano`,
-    ],
-    description: `Não perca! ${name} com preço IMBATÍVEL de ${price}. Estoque limitado — quando acabar, acabou! 💥`,
-    cta: "🛒 COMPRE AGORA ANTES QUE ACABE!",
-    hashtags: ["ofertadodia", "promoção", "corridaqueseubolsoagradece", "desconto", "ofertarelampago", "comprasinteligentes"],
-    caption: `⚡ ALERTA DE OFERTA ⚡\n\n${name} por apenas ${price}!\n\nEsse preço não vai durar. Estoque limitadíssimo!\n\n🔗 Link na bio\n\n#ofertadodia #promoção #corridaqueseubolsoagradece`,
-  }),
-  casual: (name, price) => ({
-    titles: [
-      `Olha o que eu achei: ${name} por ${price} 😍`,
-      `Gente, preciso compartilhar esse ${name} incrível!`,
-      `Testei e aprovei: ${name} vale cada centavo`,
-    ],
-    description: `Encontrei esse ${name} por ${price} e precisava contar pra vocês! Qualidade absurda e preço justo. ✨`,
-    cta: "Confira aqui 👇",
-    hashtags: ["achados", "indicação", "valecadacentavo", "comprinhas", "dicadodia", "recomendo"],
-    caption: `Gente, olha que achado! 😍\n\n${name} por apenas ${price}\n\nEu testei e posso dizer: vale MUITO a pena! ✨\n\n🔗 Link na bio\n\n#achados #indicação #dicadodia`,
-  }),
-  profissional: (name, price) => ({
-    titles: [
-      `${name} — Qualidade superior por ${price}`,
-      `Análise: ${name} entrega o que promete`,
-      `Por que o ${name} é a melhor escolha da categoria`,
-    ],
-    description: `O ${name} se destaca pela relação custo-benefício excepcional. Disponível por ${price}, combina qualidade premium com preço acessível.`,
-    cta: "Saiba mais e adquira agora",
-    hashtags: ["review", "análise", "tecnologia", "qualidade", "custobeneficio", "recomendação"],
-    caption: `📋 Review: ${name}\n\n💰 Preço: ${price}\n\nApós análise detalhada, posso afirmar que este produto oferece excelente custo-benefício.\n\n🔗 Link na bio\n\n#review #análise #custobeneficio`,
-  }),
-  divertido: (name, price) => ({
-    titles: [
-      `Esse ${name} é bom demais pra ser verdade 🤩 (mas é!)`,
-      `Se eu fosse um produto, seria esse ${name} por ${price} 😂`,
-      `POV: você descobriu o ${name} mais barato da internet`,
-    ],
-    description: `Parei tudo pra falar desse ${name}! ${price} por essa belezura? Toma meu dinheiro! 💸😂`,
-    cta: "Bora garantir o seu! 🚀",
-    hashtags: ["humor", "comprasdehumor", "achadinhos", "eunãoprecisavamas", "tomameudinheiro", "dicaboa"],
-    caption: `PARA TUDO! 🛑😂\n\n${name} por ${price}?? Alguém me segura!\n\nIsso aqui é bom demais pra guardar só pra mim 🤩\n\n🔗 Link na bio\n\n#achadinhos #eunãoprecisavamas #tomameudinheiro`,
-  }),
-};
-
 const ContentGenerator = ({ product, onContentReady }: ContentGeneratorProps) => {
   const [tone, setTone] = useState<ToneOfVoice>("casual");
   const [selectedTitle, setSelectedTitle] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
   const [content, setContent] = useState<GeneratedContent | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const generate = async () => {
     setIsGenerating(true);
-    await new Promise((r) => setTimeout(r, 1500));
-    const generated = contentByTone[tone](product.name, product.price);
-    setContent(generated);
-    setSelectedTitle(0);
-    setIsGenerating(false);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-content", {
+        body: {
+          productName: product.name,
+          productPrice: product.price,
+          productDescription: product.description,
+          tone,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.error) {
+        toast({ title: "Erro", description: data.error, variant: "destructive" });
+        return;
+      }
+
+      if (data?.content) {
+        setContent(data.content);
+        setSelectedTitle(0);
+        toast({ title: "✨ Conteúdo gerado!", description: "A IA criou seu conteúdo com sucesso." });
+      }
+    } catch (err) {
+      console.error("Error generating content:", err);
+      toast({
+        title: "Erro ao gerar conteúdo",
+        description: "Não foi possível conectar à IA. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const copyToClipboard = (text: string, field: string) => {
@@ -145,7 +128,7 @@ const ContentGenerator = ({ product, onContentReady }: ContentGeneratorProps) =>
         {isGenerating ? (
           <>
             <RefreshCw className="w-5 h-5 animate-spin" />
-            Gerando conteúdo...
+            Gerando com IA real...
           </>
         ) : content ? (
           <>

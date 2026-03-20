@@ -1,8 +1,9 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import ProductInput from "@/components/ProductInput";
 import ContentGenerator from "@/components/ContentGenerator";
 import TemplatePreview from "@/components/TemplatePreview";
-import { Sparkles, Zap } from "lucide-react";
+import { Sparkles, Zap, History } from "lucide-react";
 
 type Step = "input" | "content" | "template";
 
@@ -23,6 +24,7 @@ interface GeneratedContent {
 }
 
 const Index = () => {
+  const navigate = useNavigate();
   const [step, setStep] = useState<Step>("input");
   const [product, setProduct] = useState<ProductData | null>(null);
   const [content, setContent] = useState<GeneratedContent | null>(null);
@@ -49,6 +51,9 @@ const Index = () => {
               <Zap className="w-4 h-4 text-primary-foreground" />
             </div>
             <span className="font-bold text-lg tracking-tight">TemplateAI</span>
+            <button onClick={() => navigate("/historico")} className="ml-3 p-2 rounded-lg hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground" title="Histórico">
+              <History className="w-4 h-4" />
+            </button>
           </div>
           <div className="flex items-center gap-1.5">
             {["Produto", "Conteúdo", "Template"].map((label, i) => (
