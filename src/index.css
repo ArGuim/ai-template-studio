@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -49,6 +49,9 @@
     --ai-glow: 263 70% 58%;
     --success: 160 84% 39%;
     --success-foreground: 0 0% 100%;
+    --gradient-start: 263 70% 58%;
+    --gradient-end: 200 80% 55%;
+    --card-elevated: 240 6% 12%;
   }
 }
 
@@ -62,6 +65,7 @@
   }
 
   h1, h2, h3, h4, h5, h6 {
+    @apply font-display;
     text-wrap: balance;
     overflow-wrap: break-word;
   }
@@ -83,5 +87,70 @@
 
   .success-glow {
     box-shadow: 0 0 20px hsl(160 84% 39% / 0.15), 0 0 60px hsl(160 84% 39% / 0.05);
+  }
+
+  .gradient-text {
+    background: linear-gradient(135deg, hsl(263 70% 65%), hsl(200 80% 60%), hsl(160 84% 50%));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .gradient-border {
+    position: relative;
+    border: 1px solid transparent;
+    background-clip: padding-box;
+  }
+
+  .gradient-border::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg, hsl(263 70% 58% / 0.3), hsl(160 84% 39% / 0.3));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  .card-elevated {
+    background: hsl(var(--card-elevated));
+    border: 1px solid hsl(var(--border));
+  }
+
+  .glass {
+    background: hsl(var(--card) / 0.6);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+
+  .shimmer-loading {
+    background: linear-gradient(
+      90deg,
+      hsl(var(--secondary)) 0%,
+      hsl(var(--muted)) 50%,
+      hsl(var(--secondary)) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s linear infinite;
+  }
+
+  .hero-glow {
+    position: relative;
+  }
+
+  .hero-glow::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, hsl(263 70% 58% / 0.12) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: -1;
   }
 }
