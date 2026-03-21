@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Instagram, MessageCircle, Pin, Copy, Check, Download, Sparkles, Edit3, Save, History } from "lucide-react";
+import { Instagram, MessageCircle, Pin, Copy, Check, Download, Sparkles, Edit3, Save } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import html2canvas from "html2canvas";
 import { saveToHistory } from "@/lib/history";
@@ -51,7 +51,6 @@ const TemplatePreview = ({ product, content: initialContent, onBack }: TemplateP
 
   const toggleEdit = () => {
     if (isEditing) {
-      // Save edits
       setContent(prev => ({
         ...prev,
         titles: [editTitle, ...prev.titles.slice(1)],
@@ -90,7 +89,6 @@ const TemplatePreview = ({ product, content: initialContent, onBack }: TemplateP
       link.href = canvas.toDataURL("image/png");
       link.click();
 
-      // Save to history
       saveToHistory({
         product,
         content,
@@ -111,35 +109,22 @@ const TemplatePreview = ({ product, content: initialContent, onBack }: TemplateP
   const title = isEditing ? editTitle : content.titles[0];
   const desc = isEditing ? editDescription : content.description;
   const cta = isEditing ? editCta : content.cta;
-
   const editableClass = isEditing ? "outline outline-2 outline-dashed outline-primary/40 rounded px-1 focus:outline-primary" : "";
 
   const renderTemplate = () => {
     switch (platform) {
       case "instagram-feed":
         return (
-          <div className="w-[320px] aspect-square bg-gradient-to-br from-[hsl(263,70%,15%)] to-[hsl(240,10%,8%)] rounded-2xl overflow-hidden relative flex flex-col">
+          <div className="w-[320px] aspect-square bg-gradient-to-br from-[hsl(263,70%,15%)] to-[hsl(240,10%,8%)] rounded-2xl overflow-hidden relative flex flex-col shadow-2xl shadow-primary/10">
             <div className="flex-1 relative">
               <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover opacity-80" crossOrigin="anonymous" />
-              <div className="absolute inset-0 bg-gradient-to-t from-[hsl(240,10%,4%)] via-transparent to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[hsl(240,10%,4%)] via-[hsl(240,10%,4%,0.3)] to-transparent" />
             </div>
-            <div className="absolute bottom-0 left-0 right-0 p-5 space-y-2">
-              <p
-                className={`text-[13px] font-bold leading-tight ${editableClass}`}
-                style={{ color: "hsl(0,0%,95%)" }}
-                contentEditable={isEditing}
-                suppressContentEditableWarning
-                onBlur={(e) => isEditing && setEditTitle(e.currentTarget.textContent || "")}
-              >{title}</p>
+            <div className="absolute bottom-0 left-0 right-0 p-5 space-y-3">
+              <p className={`text-[13px] font-bold leading-tight ${editableClass}`} style={{ color: "hsl(0,0%,95%)" }} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditTitle(e.currentTarget.textContent || "")}>{title}</p>
               <div className="flex items-center justify-between">
-                <span className="text-lg font-extrabold font-mono" style={{ color: "hsl(160,84%,39%)" }}>{product.price}</span>
-                <span
-                  className={`px-3 py-1 rounded-full text-[11px] font-bold ${editableClass}`}
-                  style={{ background: "hsl(263,70%,58%)", color: "white" }}
-                  contentEditable={isEditing}
-                  suppressContentEditableWarning
-                  onBlur={(e) => isEditing && setEditCta(e.currentTarget.textContent || "")}
-                >
+                <span className="text-xl font-extrabold font-mono" style={{ color: "hsl(160,84%,39%)" }}>{product.price}</span>
+                <span className={`px-4 py-1.5 rounded-full text-[11px] font-bold ${editableClass}`} style={{ background: "linear-gradient(135deg, hsl(263,70%,58%), hsl(263,70%,48%))", color: "white" }} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditCta(e.currentTarget.textContent || "")}>
                   {cta.replace(/[🛒🚀👇]/g, "").trim().substring(0, 20)}
                 </span>
               </div>
@@ -148,23 +133,17 @@ const TemplatePreview = ({ product, content: initialContent, onBack }: TemplateP
         );
       case "instagram-stories":
         return (
-          <div className="w-[240px] aspect-[9/16] bg-gradient-to-b from-[hsl(263,70%,20%)] to-[hsl(240,10%,6%)] rounded-2xl overflow-hidden relative flex flex-col items-center justify-between p-6">
+          <div className="w-[240px] aspect-[9/16] bg-gradient-to-b from-[hsl(263,70%,20%)] to-[hsl(240,10%,6%)] rounded-2xl overflow-hidden relative flex flex-col items-center justify-between p-6 shadow-2xl shadow-primary/10">
             <div className="w-full space-y-1 text-center">
               <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: "hsl(160,84%,39%)" }}>Oferta</p>
-              <p
-                className={`text-sm font-bold leading-tight ${editableClass}`}
-                style={{ color: "hsl(0,0%,95%)" }}
-                contentEditable={isEditing}
-                suppressContentEditableWarning
-                onBlur={(e) => isEditing && setEditTitle(e.currentTarget.textContent || "")}
-              >{title}</p>
+              <p className={`text-sm font-bold leading-tight ${editableClass}`} style={{ color: "hsl(0,0%,95%)" }} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditTitle(e.currentTarget.textContent || "")}>{title}</p>
             </div>
-            <div className="w-32 h-32 rounded-2xl overflow-hidden shadow-2xl">
+            <div className="w-32 h-32 rounded-2xl overflow-hidden shadow-2xl ring-2 ring-primary/20">
               <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" crossOrigin="anonymous" />
             </div>
             <div className="space-y-3 text-center w-full">
               <p className="text-2xl font-extrabold font-mono" style={{ color: "hsl(160,84%,39%)" }}>{product.price}</p>
-              <div className="w-full py-2.5 rounded-full text-center text-xs font-bold" style={{ background: "hsl(263,70%,58%)", color: "white" }}>
+              <div className="w-full py-2.5 rounded-full text-center text-xs font-bold" style={{ background: "linear-gradient(135deg, hsl(263,70%,58%), hsl(263,70%,48%))", color: "white" }}>
                 ⬆️ Arraste para cima
               </div>
             </div>
@@ -172,74 +151,41 @@ const TemplatePreview = ({ product, content: initialContent, onBack }: TemplateP
         );
       case "tiktok":
         return (
-          <div className="w-[240px] aspect-[9/16] bg-[hsl(240,10%,4%)] rounded-2xl overflow-hidden relative flex flex-col justify-end">
+          <div className="w-[240px] aspect-[9/16] bg-[hsl(240,10%,4%)] rounded-2xl overflow-hidden relative flex flex-col justify-end shadow-2xl">
             <img src={product.imageUrl} alt={product.name} className="absolute inset-0 w-full h-full object-cover opacity-50" crossOrigin="anonymous" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[hsl(240,10%,4%)] via-[hsl(240,10%,4%,0.5)] to-transparent" />
             <div className="relative p-5 space-y-3">
-              <p
-                className={`text-lg font-extrabold leading-tight ${editableClass}`}
-                style={{ color: "hsl(0,0%,100%)", textShadow: "0 2px 8px rgba(0,0,0,0.8)" }}
-                contentEditable={isEditing}
-                suppressContentEditableWarning
-                onBlur={(e) => isEditing && setEditTitle(e.currentTarget.textContent || "")}
-              >{title}</p>
+              <p className={`text-lg font-extrabold leading-tight ${editableClass}`} style={{ color: "hsl(0,0%,100%)", textShadow: "0 2px 8px rgba(0,0,0,0.8)" }} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditTitle(e.currentTarget.textContent || "")}>{title}</p>
               <p className="text-2xl font-black font-mono" style={{ color: "hsl(160,84%,39%)", textShadow: "0 2px 8px rgba(0,0,0,0.8)" }}>{product.price}</p>
-              <p
-                className={`text-xs ${editableClass}`}
-                style={{ color: "hsl(0,0%,80%)" }}
-                contentEditable={isEditing}
-                suppressContentEditableWarning
-                onBlur={(e) => isEditing && setEditDescription(e.currentTarget.textContent || "")}
-              >{desc.substring(0, 80)}...</p>
+              <p className={`text-xs ${editableClass}`} style={{ color: "hsl(0,0%,80%)" }} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditDescription(e.currentTarget.textContent || "")}>{desc.substring(0, 80)}...</p>
             </div>
           </div>
         );
       case "pinterest":
         return (
-          <div className="w-[260px] bg-card rounded-2xl overflow-hidden border border-border">
+          <div className="w-[260px] bg-card rounded-2xl overflow-hidden border border-border shadow-2xl">
             <img src={product.imageUrl} alt={product.name} className="w-full aspect-[4/5] object-cover" crossOrigin="anonymous" />
             <div className="p-4 space-y-2">
-              <p
-                className={`text-sm font-bold leading-tight ${editableClass}`}
-                contentEditable={isEditing}
-                suppressContentEditableWarning
-                onBlur={(e) => isEditing && setEditTitle(e.currentTarget.textContent || "")}
-              >{title.substring(0, 60)}</p>
-              <p
-                className={`text-xs text-muted-foreground leading-relaxed ${editableClass}`}
-                contentEditable={isEditing}
-                suppressContentEditableWarning
-                onBlur={(e) => isEditing && setEditDescription(e.currentTarget.textContent || "")}
-              >{desc}</p>
+              <p className={`text-sm font-bold leading-tight ${editableClass}`} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditTitle(e.currentTarget.textContent || "")}>{title.substring(0, 60)}</p>
+              <p className={`text-xs text-muted-foreground leading-relaxed ${editableClass}`} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditDescription(e.currentTarget.textContent || "")}>{desc}</p>
               <div className="flex items-center justify-between pt-1">
                 <span className="text-base font-extrabold font-mono text-success">{product.price}</span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary text-primary-foreground font-bold">Ver oferta</span>
+                <span className="text-[10px] px-2.5 py-1 rounded-full bg-primary text-primary-foreground font-bold">Ver oferta</span>
               </div>
             </div>
           </div>
         );
       case "whatsapp":
         return (
-          <div className="w-[300px] bg-[hsl(140,20%,14%)] rounded-2xl p-4 space-y-3">
+          <div className="w-[300px] bg-[hsl(140,20%,14%)] rounded-2xl p-4 space-y-3 shadow-2xl">
             <div className="rounded-xl overflow-hidden">
               <img src={product.imageUrl} alt={product.name} className="w-full aspect-video object-cover" crossOrigin="anonymous" />
             </div>
             <div className="space-y-1">
-              <p
-                className={`text-sm font-bold ${editableClass}`}
-                style={{ color: "hsl(0,0%,95%)" }}
-                contentEditable={isEditing}
-                suppressContentEditableWarning
-                onBlur={(e) => isEditing && setEditTitle(e.currentTarget.textContent || "")}
-              >{title}</p>
+              <p className={`text-sm font-bold ${editableClass}`} style={{ color: "hsl(0,0%,95%)" }} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditTitle(e.currentTarget.textContent || "")}>{title}</p>
               <p className="text-xl font-extrabold font-mono" style={{ color: "hsl(160,84%,39%)" }}>{product.price}</p>
             </div>
-            <p
-              className={`text-xs ${editableClass}`}
-              style={{ color: "hsl(0,0%,75%)" }}
-              contentEditable={isEditing}
-              suppressContentEditableWarning
-              onBlur={(e) => isEditing && setEditDescription(e.currentTarget.textContent || "")}
-            >{desc.substring(0, 100)}</p>
+            <p className={`text-xs ${editableClass}`} style={{ color: "hsl(0,0%,75%)" }} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditDescription(e.currentTarget.textContent || "")}>{desc.substring(0, 100)}</p>
             <p className="text-[11px] font-medium" style={{ color: "hsl(200,80%,60%)" }}>🔗 {product.link.substring(0, 40)}...</p>
           </div>
         );
@@ -247,13 +193,13 @@ const TemplatePreview = ({ product, content: initialContent, onBack }: TemplateP
   };
 
   return (
-    <div className="space-y-6 animate-fade-up">
+    <div className="space-y-6">
       <div className="text-center space-y-2">
-        <div className="inline-flex items-center gap-2 rounded-full bg-success/10 px-4 py-1.5 text-sm text-success font-medium">
-          <Sparkles className="w-4 h-4" />
+        <div className="inline-flex items-center gap-2 rounded-full bg-success/10 px-4 py-1.5 text-sm text-success font-medium border border-success/20">
+          <Sparkles className="w-3.5 h-3.5" />
           Templates prontos
         </div>
-        <h2 className="text-2xl font-bold tracking-tight">Escolha a plataforma</h2>
+        <h2 className="text-2xl font-display font-bold tracking-tight">Escolha a plataforma</h2>
       </div>
 
       {/* Platform tabs */}
@@ -262,10 +208,10 @@ const TemplatePreview = ({ product, content: initialContent, onBack }: TemplateP
           <button
             key={p.id}
             onClick={() => setPlatform(p.id)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 active:scale-[0.97] ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 active:scale-[0.97] border ${
               platform === p.id
-                ? "bg-primary text-primary-foreground ai-glow"
-                : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                ? "bg-primary/10 text-primary border-primary/30 ai-glow"
+                : "bg-secondary/50 text-secondary-foreground border-transparent hover:bg-secondary hover:border-border"
             }`}
           >
             {p.icon} {p.label}
@@ -288,20 +234,20 @@ const TemplatePreview = ({ product, content: initialContent, onBack }: TemplateP
 
       {/* Actions */}
       <div className="flex gap-3 justify-center flex-wrap">
-        <Button variant="outline" onClick={onBack}>
+        <Button variant="outline" onClick={onBack} className="rounded-xl">
           ← Voltar
         </Button>
-        <Button variant="outline" onClick={toggleEdit}>
+        <Button variant="outline" onClick={toggleEdit} className="rounded-xl">
           {isEditing ? <Save className="w-4 h-4" /> : <Edit3 className="w-4 h-4" />}
           {isEditing ? "Salvar" : "Editar"}
         </Button>
-        <Button variant="ai" onClick={copyAll}>
+        <Button variant="ai" onClick={copyAll} className="rounded-xl">
           {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
           {copied ? "Copiado!" : "Copiar tudo"}
         </Button>
-        <Button variant="success" onClick={exportImage} disabled={isExporting}>
+        <Button variant="success" onClick={exportImage} disabled={isExporting} className="rounded-xl">
           <Download className="w-4 h-4" />
-          {isExporting ? "Exportando..." : "Exportar imagem"}
+          {isExporting ? "Exportando..." : "Exportar"}
         </Button>
       </div>
     </div>

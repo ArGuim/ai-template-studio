@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Link2, Sparkles, Loader2, Package, DollarSign, FileText, Image as ImageIcon, AlertCircle } from "lucide-react";
+import { Link2, Sparkles, Loader2, Package, DollarSign, FileText, Image as ImageIcon, AlertCircle, ArrowRight, ChevronDown, ChevronUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -89,31 +89,45 @@ const ProductInput = ({ onProductReady }: ProductInputProps) => {
   };
 
   return (
-    <div className="space-y-6 animate-fade-up">
-      <div className="text-center space-y-2">
-        <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-sm text-primary font-medium">
-          <Sparkles className="w-4 h-4" />
+    <div className="space-y-8">
+      {/* Hero */}
+      <div className="text-center space-y-4 hero-glow">
+        <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-sm text-primary font-medium border border-primary/20">
+          <Sparkles className="w-3.5 h-3.5" />
           Extração Real com IA
         </div>
-        <h1 className="text-3xl font-bold tracking-tight" style={{ lineHeight: "1.1" }}>
-          Cole o link e a IA faz o resto
+        <h1 className="text-4xl sm:text-5xl font-display font-bold tracking-tight leading-[1.1]">
+          Cole o link e a IA
+          <br />
+          <span className="gradient-text">faz o resto</span>
         </h1>
-        <p className="text-muted-foreground max-w-md mx-auto">
-          Extraímos dados do produto automaticamente via scraping + IA e geramos templates prontos.
+        <p className="text-muted-foreground max-w-md mx-auto text-base">
+          Extraímos dados do produto automaticamente e geramos templates prontos para divulgação.
         </p>
       </div>
 
-      <div className="relative max-w-lg mx-auto">
-        <Link2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+      {/* Link input */}
+      <div className="relative max-w-lg mx-auto group">
+        <Link2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
         <Input
           value={link}
           onChange={(e) => setLink(e.target.value)}
-          placeholder="Cole o link do produto (Amazon, Shopee, Mercado Livre...)"
-          className="pl-12 h-14 text-base bg-secondary border-border/50 focus:border-primary/50 rounded-xl"
+          placeholder="Cole o link do produto..."
+          className="pl-12 pr-14 h-14 text-base bg-secondary/50 border-border/50 focus:border-primary/50 rounded-xl"
           onKeyDown={(e) => e.key === "Enter" && extractFromLink()}
         />
+        {link.trim() && (
+          <button
+            onClick={extractFromLink}
+            disabled={isExtracting}
+            className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-lg bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors disabled:opacity-50"
+          >
+            {isExtracting ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
+          </button>
+        )}
       </div>
 
+      {/* Extract error */}
       {extractError && (
         <div className="max-w-lg mx-auto flex items-start gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
           <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
@@ -121,13 +135,14 @@ const ProductInput = ({ onProductReady }: ProductInputProps) => {
         </div>
       )}
 
-      <div className="flex flex-col items-center gap-3">
+      {/* Extract button */}
+      <div className="flex flex-col items-center gap-4">
         <Button
           variant="ai"
           size="lg"
           onClick={extractFromLink}
           disabled={isExtracting}
-          className="min-w-[220px]"
+          className="min-w-[240px] h-12 text-base"
         >
           {isExtracting ? (
             <>
@@ -144,42 +159,48 @@ const ProductInput = ({ onProductReady }: ProductInputProps) => {
 
         <button
           onClick={() => setShowManual(!showManual)}
-          className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
+          {showManual ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
           ou preencher manualmente
         </button>
       </div>
 
+      {/* Manual form */}
       {showManual && (
-        <div className="max-w-lg mx-auto space-y-3 animate-fade-up rounded-xl bg-card border border-border p-6">
-          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Dados do Produto</h3>
+        <div className="max-w-lg mx-auto space-y-4 animate-fade-up rounded-xl bg-card border border-border p-6">
+          <h3 className="text-sm font-display font-semibold text-muted-foreground uppercase tracking-wider">Dados do Produto</h3>
           <div className="space-y-3">
-            <div className="relative">
-              <Package className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input value={manual.name} onChange={(e) => setManual({ ...manual, name: e.target.value })} placeholder="Nome do produto" className="pl-10 bg-secondary" />
-            </div>
-            <div className="relative">
-              <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input value={manual.price} onChange={(e) => setManual({ ...manual, price: e.target.value })} placeholder="Preço (ex: R$ 89,90)" className="pl-10 bg-secondary" />
-            </div>
-            <div className="relative">
-              <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input value={manual.description} onChange={(e) => setManual({ ...manual, description: e.target.value })} placeholder="Descrição curta" className="pl-10 bg-secondary" />
-            </div>
-            <div className="relative">
-              <ImageIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input value={manual.imageUrl} onChange={(e) => setManual({ ...manual, imageUrl: e.target.value })} placeholder="URL da imagem (opcional)" className="pl-10 bg-secondary" />
-            </div>
-            <div className="relative">
-              <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input value={manual.link} onChange={(e) => setManual({ ...manual, link: e.target.value })} placeholder="Link de afiliado" className="pl-10 bg-secondary" />
-            </div>
+            {[
+              { icon: Package, value: manual.name, key: "name" as const, placeholder: "Nome do produto" },
+              { icon: DollarSign, value: manual.price, key: "price" as const, placeholder: "Preço (ex: R$ 89,90)" },
+              { icon: FileText, value: manual.description, key: "description" as const, placeholder: "Descrição curta" },
+              { icon: ImageIcon, value: manual.imageUrl, key: "imageUrl" as const, placeholder: "URL da imagem (opcional)" },
+              { icon: Link2, value: manual.link, key: "link" as const, placeholder: "Link de afiliado" },
+            ].map(({ icon: Icon, value, key, placeholder }) => (
+              <div key={key} className="relative">
+                <Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  value={value}
+                  onChange={(e) => setManual({ ...manual, [key]: e.target.value })}
+                  placeholder={placeholder}
+                  className="pl-10 bg-secondary/50"
+                />
+              </div>
+            ))}
           </div>
-          <Button variant="success" onClick={submitManual} className="w-full">
-            Continuar
+          <Button variant="success" onClick={submitManual} className="w-full" disabled={!manual.name || !manual.price}>
+            Continuar <ArrowRight className="w-4 h-4" />
           </Button>
         </div>
       )}
+
+      {/* Supported platforms hint */}
+      <div className="text-center">
+        <p className="text-xs text-muted-foreground/50">
+          Amazon • Shopee • Mercado Livre • Shein • AliExpress • Qualquer loja online
+        </p>
+      </div>
     </div>
   );
 };

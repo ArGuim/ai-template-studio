@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Sparkles, RefreshCw, Copy, Check, Hash, MessageSquare, Megaphone } from "lucide-react";
+import { Sparkles, RefreshCw, Copy, Check, Hash, MessageSquare, Megaphone, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -88,47 +88,53 @@ const ContentGenerator = ({ product, onContentReady }: ContentGeneratorProps) =>
     <button
       onClick={() => copyToClipboard(text, field)}
       className="p-1.5 rounded-md hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground"
+      title="Copiar"
     >
       {copiedField === field ? <Check className="w-3.5 h-3.5 text-success" /> : <Copy className="w-3.5 h-3.5" />}
     </button>
   );
 
   return (
-    <div className="space-y-6 animate-fade-up">
-      {/* Product preview */}
-      <div className="flex items-center gap-4 p-4 rounded-xl bg-card border border-border">
-        <img src={product.imageUrl} alt={product.name} className="w-16 h-16 rounded-lg object-cover" />
+    <div className="space-y-6">
+      {/* Product preview card */}
+      <div className="flex items-center gap-4 p-4 rounded-xl gradient-border bg-card">
+        <img
+          src={product.imageUrl}
+          alt={product.name}
+          className="w-16 h-16 rounded-lg object-cover ring-1 ring-border"
+        />
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold truncate">{product.name}</h3>
-          <p className="text-success font-bold font-mono">{product.price}</p>
+          <h3 className="font-display font-semibold truncate">{product.name}</h3>
+          <p className="text-success font-bold font-mono text-lg">{product.price}</p>
         </div>
       </div>
 
       {/* Tone selection */}
-      <div className="space-y-2">
+      <div className="space-y-3">
         <label className="text-sm font-medium text-muted-foreground">Tom de voz</label>
-        <div className="flex gap-2 flex-wrap">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {toneOptions.map((t) => (
             <button
               key={t.value}
               onClick={() => setTone(t.value)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 active:scale-[0.97] ${
+              className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 active:scale-[0.97] border ${
                 tone === t.value
-                  ? "bg-primary text-primary-foreground ai-glow"
-                  : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                  ? "bg-primary/10 text-primary border-primary/30 ai-glow"
+                  : "bg-secondary/50 text-secondary-foreground border-transparent hover:bg-secondary hover:border-border"
               }`}
             >
-              {t.emoji} {t.label}
+              <span className="text-base">{t.emoji}</span> {t.label}
             </button>
           ))}
         </div>
       </div>
 
-      <Button variant="ai" size="lg" onClick={generate} disabled={isGenerating} className="w-full">
+      {/* Generate button */}
+      <Button variant="ai" size="lg" onClick={generate} disabled={isGenerating} className="w-full h-12 text-base">
         {isGenerating ? (
           <>
             <RefreshCw className="w-5 h-5 animate-spin" />
-            Gerando com IA real...
+            Gerando com IA...
           </>
         ) : content ? (
           <>
@@ -143,7 +149,18 @@ const ContentGenerator = ({ product, onContentReady }: ContentGeneratorProps) =>
         )}
       </Button>
 
-      {content && (
+      {/* Loading skeleton */}
+      {isGenerating && !content && (
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-12 rounded-lg shimmer-loading" />
+          ))}
+          <div className="h-20 rounded-lg shimmer-loading" />
+        </div>
+      )}
+
+      {/* Generated content */}
+      {content && !isGenerating && (
         <div className="space-y-5 animate-fade-up">
           {/* Titles */}
           <div className="space-y-2">
@@ -156,10 +173,10 @@ const ContentGenerator = ({ product, onContentReady }: ContentGeneratorProps) =>
                 <div
                   key={i}
                   onClick={() => setSelectedTitle(i)}
-                  className={`flex items-center justify-between gap-2 p-3 rounded-lg cursor-pointer transition-all duration-200 ${
+                  className={`flex items-center justify-between gap-2 p-3 rounded-xl cursor-pointer transition-all duration-200 group ${
                     selectedTitle === i
-                      ? "bg-primary/10 border border-primary/30"
-                      : "bg-secondary border border-transparent hover:border-border"
+                      ? "bg-primary/10 border border-primary/30 ai-glow"
+                      : "bg-secondary/50 border border-transparent hover:border-border hover:bg-secondary"
                   }`}
                 >
                   <span className="text-sm">{title}</span>
@@ -178,7 +195,7 @@ const ContentGenerator = ({ product, onContentReady }: ContentGeneratorProps) =>
               </div>
               <CopyBtn text={content.description} field="desc" />
             </div>
-            <p className="text-sm p-3 rounded-lg bg-secondary">{content.description}</p>
+            <p className="text-sm p-3 rounded-xl bg-secondary/50 leading-relaxed">{content.description}</p>
           </div>
 
           {/* CTA */}
@@ -187,7 +204,7 @@ const ContentGenerator = ({ product, onContentReady }: ContentGeneratorProps) =>
               <span className="text-sm font-medium text-muted-foreground">CTA</span>
               <CopyBtn text={content.cta} field="cta" />
             </div>
-            <div className="p-3 rounded-lg bg-success/10 border border-success/20 text-success font-semibold text-sm">
+            <div className="p-3 rounded-xl bg-success/10 border border-success/20 text-success font-semibold text-sm">
               {content.cta}
             </div>
           </div>
@@ -203,7 +220,7 @@ const ContentGenerator = ({ product, onContentReady }: ContentGeneratorProps) =>
             </div>
             <div className="flex flex-wrap gap-2">
               {content.hashtags.map((tag) => (
-                <span key={tag} className="px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                <span key={tag} className="px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium border border-primary/20">
                   #{tag}
                 </span>
               ))}
@@ -214,9 +231,9 @@ const ContentGenerator = ({ product, onContentReady }: ContentGeneratorProps) =>
             variant="success"
             size="lg"
             onClick={() => onContentReady(content, tone)}
-            className="w-full"
+            className="w-full h-12 text-base"
           >
-            Continuar para Templates →
+            Continuar para Templates <ArrowRight className="w-4 h-4" />
           </Button>
         </div>
       )}
