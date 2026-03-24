@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import ProductInput from "@/components/ProductInput";
 import ContentGenerator from "@/components/ContentGenerator";
 import TemplatePreview from "@/components/TemplatePreview";
-import { Sparkles, Zap, History, RotateCcw } from "lucide-react";
+import ApiSettings from "@/components/ApiSettings";
+import { Sparkles, Zap, History, RotateCcw, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type Step = "input" | "content" | "template";
