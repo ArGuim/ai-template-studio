@@ -12,7 +12,7 @@ interface ProductData {
   link: string;
 }
 
-type ToneOfVoice = "urgente" | "casual" | "profissional" | "divertido";
+export type ToneOfVoice = "urgente" | "casual" | "profissional" | "divertido" | "luxo" | "informativo" | "emocional" | "tecnico";
 
 interface GeneratedContent {
   titles: string[];
@@ -27,11 +27,15 @@ interface ContentGeneratorProps {
   onContentReady: (content: GeneratedContent, tone: ToneOfVoice) => void;
 }
 
-const toneOptions: { value: ToneOfVoice; label: string; emoji: string }[] = [
-  { value: "urgente", label: "Urgente", emoji: "🔥" },
-  { value: "casual", label: "Casual", emoji: "😊" },
-  { value: "profissional", label: "Profissional", emoji: "💼" },
-  { value: "divertido", label: "Divertido", emoji: "🎉" },
+const toneOptions: { value: ToneOfVoice; label: string; emoji: string; desc: string }[] = [
+  { value: "urgente", label: "Urgente", emoji: "🔥", desc: "Escassez e pressa" },
+  { value: "casual", label: "Casual", emoji: "😊", desc: "Amigável e leve" },
+  { value: "profissional", label: "Profissional", emoji: "💼", desc: "Formal e analítico" },
+  { value: "divertido", label: "Divertido", emoji: "🎉", desc: "Humor e memes" },
+  { value: "luxo", label: "Luxo", emoji: "✨", desc: "Premium e exclusivo" },
+  { value: "informativo", label: "Informativo", emoji: "📚", desc: "Educativo e detalhado" },
+  { value: "emocional", label: "Emocional", emoji: "💖", desc: "Storytelling e conexão" },
+  { value: "tecnico", label: "Técnico", emoji: "⚙️", desc: "Specs e comparações" },
 ];
 
 const ContentGenerator = ({ product, onContentReady }: ContentGeneratorProps) => {
@@ -117,13 +121,16 @@ const ContentGenerator = ({ product, onContentReady }: ContentGeneratorProps) =>
             <button
               key={t.value}
               onClick={() => setTone(t.value)}
-              className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 active:scale-[0.97] border ${
+              className={`flex flex-col items-start px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 active:scale-[0.97] border ${
                 tone === t.value
                   ? "bg-primary/10 text-primary border-primary/30 ai-glow"
                   : "bg-secondary/50 text-secondary-foreground border-transparent hover:bg-secondary hover:border-border"
               }`}
             >
-              <span className="text-base">{t.emoji}</span> {t.label}
+              <span className="flex items-center gap-1.5">
+                <span className="text-base">{t.emoji}</span> {t.label}
+              </span>
+              <span className="text-[10px] text-muted-foreground mt-0.5">{t.desc}</span>
             </button>
           ))}
         </div>

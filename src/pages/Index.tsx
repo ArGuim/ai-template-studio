@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import ProductInput from "@/components/ProductInput";
 import ContentGenerator from "@/components/ContentGenerator";
 import TemplatePreview from "@/components/TemplatePreview";
-import { Sparkles, Zap, History, RotateCcw } from "lucide-react";
+import ApiSettings from "@/components/ApiSettings";
+import { Sparkles, Zap, History, RotateCcw, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type Step = "input" | "content" | "template";
@@ -125,9 +126,12 @@ const Index = () => {
 
       {/* Footer */}
       <footer className="border-t border-border/30 py-5 text-center text-xs text-muted-foreground">
-        <div className="flex items-center justify-center gap-1.5">
-          <Sparkles className="w-3 h-3 text-primary/60" />
-          <span className="opacity-70">Powered by IA — Templates otimizados para conversão</span>
+        <div className="flex items-center justify-center gap-4">
+          <div className="flex items-center gap-1.5">
+            <Sparkles className="w-3 h-3 text-primary/60" />
+            <span className="opacity-70">Powered by IA</span>
+          </div>
+          <ApiSettings />
         </div>
       </footer>
     </div>
