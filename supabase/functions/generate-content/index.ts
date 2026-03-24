@@ -23,6 +23,10 @@ serve(async (req) => {
       casual: "Use um tom casual e amigável, como se estivesse indicando para um amigo. Use emojis fofos e linguagem informal.",
       profissional: "Use um tom profissional e analítico. Foque em custo-benefício, qualidade e dados objetivos. Seja formal mas acessível.",
       divertido: "Use um tom divertido e humorístico. Faça piadas, use memes e referências populares. Seja irreverente e engraçado.",
+      luxo: "Use um tom PREMIUM e EXCLUSIVO. Palavras como 'sofisticado', 'exclusivo', 'selecionado'. Transmita elegância, qualidade superior e status. Use emojis dourados ✨💎👑.",
+      informativo: "Use um tom EDUCATIVO e DETALHADO. Explique benefícios, funcionalidades e diferenciais. Use dados, comparações e fatos. Seja didático e informativo. Use emojis de livro 📖📊.",
+      emocional: "Use um tom EMOCIONAL e de STORYTELLING. Conecte o produto a sentimentos, memórias e experiências. Crie uma narrativa envolvente. Use emojis de coração 💖🥺✨.",
+      tecnico: "Use um tom TÉCNICO e de ESPECIFICAÇÕES. Liste specs, compare com concorrentes, destaque dados técnicos. Seja preciso e objetivo. Use emojis de engrenagem ⚙️📐🔧.",
     };
 
     const systemPrompt = `Você é um copywriter especialista em marketing de afiliados no Brasil. Gere conteúdo persuasivo para divulgação de produtos.
@@ -85,7 +89,6 @@ Gere conteúdo persuasivo para divulgação deste produto nas redes sociais.`;
       throw new Error("No content returned from AI");
     }
 
-    // Parse the JSON response, handling potential markdown code blocks
     let content;
     try {
       const cleaned = rawContent.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
