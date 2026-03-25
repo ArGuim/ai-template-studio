@@ -29,11 +29,17 @@ serve(async (req) => {
       tecnico: "Use um tom TÉCNICO e de ESPECIFICAÇÕES. Liste specs, compare com concorrentes, destaque dados técnicos. Seja preciso e objetivo. Use emojis de engrenagem ⚙️📐🔧.",
     };
 
+    const isAmazon = productLink && /amazon\.|amzn\./i.test(productLink);
+
+    const amazonRule = isAmazon
+      ? `\n\nREGRA CRÍTICA (PRODUTO DA AMAZON): NÃO mencione preços, valores, descontos, porcentagens de desconto, disponibilidade de estoque ou promoções específicas. Em vez disso, use frases como "Para saber mais, link na bio", "Confira todos os detalhes no link da bio", "Acesse o link na bio para ver mais". O CTA deve direcionar para o link na bio, NUNCA mencionar preço.`
+      : '';
+
     const systemPrompt = `Você é um copywriter especialista em marketing de afiliados no Brasil. Gere conteúdo persuasivo para divulgação de produtos.
 
 IMPORTANTE: Responda APENAS com JSON válido, sem markdown, sem código, sem explicação. Apenas o objeto JSON.
 
-${toneInstructions[tone] || toneInstructions.casual}
+${toneInstructions[tone] || toneInstructions.casual}${amazonRule}
 
 Gere o conteúdo no seguinte formato JSON:
 {
@@ -45,11 +51,10 @@ Gere o conteúdo no seguinte formato JSON:
 }`;
 
     const userPrompt = `Produto: ${productName}
-Preço: ${productPrice}
-${productDescription ? `Descrição: ${productDescription}` : ''}
+${isAmazon ? '' : `Preço: ${productPrice}\n`}${productDescription ? `Descrição: ${productDescription}` : ''}
 Tom de voz: ${tone}
 
-Gere conteúdo persuasivo para divulgação deste produto nas redes sociais.`;
+Gere conteúdo persuasivo para divulgação deste produto nas redes sociais.${isAmazon ? ' Lembre-se: NÃO mencione preços, descontos ou estoque. Use "link na bio" como direcionamento.' : ''}`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
