@@ -119,15 +119,20 @@ const TemplatePreview = ({ product, content: initialContent, onBack }: TemplateP
           <div className="w-[320px] aspect-square rounded-2xl overflow-hidden relative shadow-2xl shadow-primary/10">
             <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" crossOrigin="anonymous" />
             <div className="absolute inset-0 bg-gradient-to-t from-[hsl(240,10%,4%,0.7)] via-transparent to-transparent" />
-            <div className="absolute top-4 right-4">
-              <span className="px-3 py-1.5 rounded-full text-sm font-extrabold font-mono backdrop-blur-md" style={{ background: "hsl(160,84%,39%,0.9)", color: "hsl(240,10%,4%)" }}>
-                {product.price}
-              </span>
-            </div>
+            {!isAmazon && (
+              <div className="absolute top-4 right-4">
+                <span className="px-3 py-1.5 rounded-full text-sm font-extrabold font-mono backdrop-blur-md" style={{ background: "hsl(160,84%,39%,0.9)", color: "hsl(240,10%,4%)" }}>
+                  {product.price}
+                </span>
+              </div>
+            )}
             <div className="absolute bottom-0 left-0 right-0 p-5">
               <p className={`text-xs font-semibold leading-tight ${editableClass}`} style={{ color: "hsl(0,0%,90%)" }} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditTitle(e.currentTarget.textContent || "")}>
                 {title.substring(0, 60)}
               </p>
+              {isAmazon && (
+                <p className="text-[10px] mt-1.5 font-medium" style={{ color: "hsl(160,84%,39%)" }}>🔗 Para saber mais, link na bio</p>
+              )}
             </div>
           </div>
         );
@@ -138,11 +143,13 @@ const TemplatePreview = ({ product, content: initialContent, onBack }: TemplateP
           <div className="w-[320px] aspect-square rounded-2xl overflow-hidden relative shadow-2xl shadow-primary/10">
             <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" crossOrigin="anonymous" />
             <div className="absolute inset-0 bg-gradient-to-t from-[hsl(240,10%,4%,0.5)] via-transparent to-transparent" />
-            <div className="absolute top-4 right-4">
-              <span className="px-3 py-1.5 rounded-full text-sm font-extrabold font-mono backdrop-blur-md" style={{ background: "hsl(160,84%,39%,0.9)", color: "hsl(240,10%,4%)" }}>
-                {product.price}
-              </span>
-            </div>
+            {!isAmazon && (
+              <div className="absolute top-4 right-4">
+                <span className="px-3 py-1.5 rounded-full text-sm font-extrabold font-mono backdrop-blur-md" style={{ background: "hsl(160,84%,39%,0.9)", color: "hsl(240,10%,4%)" }}>
+                  {product.price}
+                </span>
+              </div>
+            )}
             <div className="absolute bottom-0 left-0 right-0 p-5">
               <p className={`text-sm font-bold leading-tight ${editableClass}`} style={{ color: "hsl(0,0%,95%)" }} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditTitle(e.currentTarget.textContent || "")}>
                 {title.substring(0, 50)}
