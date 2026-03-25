@@ -54,6 +54,7 @@ const ContentGenerator = ({ product, onContentReady }: ContentGeneratorProps) =>
           productName: product.name,
           productPrice: product.price,
           productDescription: product.description,
+          productLink: product.link,
           tone,
         },
       });
