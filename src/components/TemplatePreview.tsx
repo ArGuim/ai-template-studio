@@ -4,6 +4,7 @@ import { Instagram, MessageCircle, Pin, Copy, Check, Download, Sparkles, Edit3, 
 import { useToast } from "@/hooks/use-toast";
 import html2canvas from "html2canvas";
 import { saveToHistory } from "@/lib/history";
+import { QRCodeSVG } from "qrcode.react";
 
 interface ProductData {
   name: string;
@@ -31,9 +32,9 @@ interface TemplatePreviewProps {
 
 const platforms: { id: Platform; label: string; icon: React.ReactNode; hint: string }[] = [
   { id: "instagram-post", label: "IG Post", icon: <ImageIcon className="w-4 h-4" />, hint: "Foco em imagem" },
-  { id: "instagram-feed", label: "IG Feed", icon: <Instagram className="w-4 h-4" />, hint: "Imagem + texto" },
-  { id: "instagram-stories", label: "Stories", icon: <Instagram className="w-4 h-4" />, hint: "Vertical + título forte" },
-  { id: "whatsapp-status", label: "WhatsApp", icon: <MessageCircle className="w-4 h-4" />, hint: "Imagem inteira + título" },
+  { id: "instagram-feed", label: "IG Feed", icon: <Instagram className="w-4 h-4" />, hint: "Imagem limpa" },
+  { id: "instagram-stories", label: "Stories", icon: <Instagram className="w-4 h-4" />, hint: "Imagem inteira" },
+  { id: "whatsapp-status", label: "WhatsApp", icon: <MessageCircle className="w-4 h-4" />, hint: "Imagem + QR Code" },
 ];
 
 const TemplatePreview = ({ product, content: initialContent, onBack }: TemplatePreviewProps) => {
@@ -107,83 +108,79 @@ const TemplatePreview = ({ product, content: initialContent, onBack }: TemplateP
 
   const title = isEditing ? editTitle : content.titles[0];
   const desc = isEditing ? editDescription : content.description;
-  const cta = isEditing ? editCta : content.cta;
   const editableClass = isEditing ? "outline outline-2 outline-dashed outline-primary/40 rounded px-1 focus:outline-primary" : "";
 
   const renderTemplate = () => {
     switch (platform) {
-      // Instagram Post: FOCO EM IMAGEM — imagem grande, texto mínimo sobreposto
+      // Instagram Post: imagem grande, preço + título mínimo
       case "instagram-post":
         return (
           <div className="w-[320px] aspect-square rounded-2xl overflow-hidden relative shadow-2xl shadow-primary/10">
             <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" crossOrigin="anonymous" />
-            <div className="absolute inset-0 bg-gradient-to-t from-[hsl(240,10%,4%,0.85)] via-transparent to-transparent" />
-            {/* Minimal overlay — just price badge and small CTA */}
+            <div className="absolute inset-0 bg-gradient-to-t from-[hsl(240,10%,4%,0.7)] via-transparent to-transparent" />
             <div className="absolute top-4 right-4">
               <span className="px-3 py-1.5 rounded-full text-sm font-extrabold font-mono backdrop-blur-md" style={{ background: "hsl(160,84%,39%,0.9)", color: "hsl(240,10%,4%)" }}>
                 {product.price}
               </span>
             </div>
             <div className="absolute bottom-0 left-0 right-0 p-5">
-              <p className={`text-xs font-semibold leading-tight mb-2 ${editableClass}`} style={{ color: "hsl(0,0%,90%)" }} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditTitle(e.currentTarget.textContent || "")}>
+              <p className={`text-xs font-semibold leading-tight ${editableClass}`} style={{ color: "hsl(0,0%,90%)" }} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditTitle(e.currentTarget.textContent || "")}>
                 {title.substring(0, 60)}
               </p>
-              <span className={`inline-block px-3 py-1 rounded-full text-[10px] font-bold ${editableClass}`} style={{ background: "linear-gradient(135deg, hsl(263,70%,58%), hsl(263,70%,48%))", color: "white" }} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditCta(e.currentTarget.textContent || "")}>
-                {cta.replace(/[🛒🚀👇]/g, "").trim().substring(0, 18)}
-              </span>
             </div>
           </div>
         );
 
-      // Instagram Feed: imagem + texto equilibrado
+      // Instagram Feed: FOCO EM IMAGEM — sem selo, sem CTA, imagem limpa
       case "instagram-feed":
         return (
-          <div className="w-[320px] aspect-square bg-gradient-to-br from-[hsl(263,70%,15%)] to-[hsl(240,10%,8%)] rounded-2xl overflow-hidden relative flex flex-col shadow-2xl shadow-primary/10">
-            <div className="flex-1 relative">
-              <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover opacity-80" crossOrigin="anonymous" />
-              <div className="absolute inset-0 bg-gradient-to-t from-[hsl(240,10%,4%)] via-[hsl(240,10%,4%,0.3)] to-transparent" />
+          <div className="w-[320px] aspect-square rounded-2xl overflow-hidden relative shadow-2xl shadow-primary/10">
+            <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" crossOrigin="anonymous" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[hsl(240,10%,4%,0.5)] via-transparent to-transparent" />
+            <div className="absolute top-4 right-4">
+              <span className="px-3 py-1.5 rounded-full text-sm font-extrabold font-mono backdrop-blur-md" style={{ background: "hsl(160,84%,39%,0.9)", color: "hsl(240,10%,4%)" }}>
+                {product.price}
+              </span>
             </div>
-            <div className="absolute bottom-0 left-0 right-0 p-5 space-y-2">
-              <p className={`text-[13px] font-bold leading-tight ${editableClass}`} style={{ color: "hsl(0,0%,95%)" }} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditTitle(e.currentTarget.textContent || "")}>{title}</p>
-              <p className={`text-[10px] leading-relaxed ${editableClass}`} style={{ color: "hsl(0,0%,75%)" }} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditDescription(e.currentTarget.textContent || "")}>{desc.substring(0, 90)}</p>
-              <div className="flex items-center justify-between">
-                <span className="text-xl font-extrabold font-mono" style={{ color: "hsl(160,84%,39%)" }}>{product.price}</span>
-                <span className={`px-4 py-1.5 rounded-full text-[11px] font-bold ${editableClass}`} style={{ background: "linear-gradient(135deg, hsl(263,70%,58%), hsl(263,70%,48%))", color: "white" }} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditCta(e.currentTarget.textContent || "")}>
-                  {cta.replace(/[🛒🚀👇]/g, "").trim().substring(0, 20)}
-                </span>
-              </div>
+            <div className="absolute bottom-0 left-0 right-0 p-5">
+              <p className={`text-sm font-bold leading-tight ${editableClass}`} style={{ color: "hsl(0,0%,95%)" }} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditTitle(e.currentTarget.textContent || "")}>
+                {title.substring(0, 50)}
+              </p>
             </div>
           </div>
         );
 
-      // Instagram Stories: texto vertical + título forte
+      // Instagram Stories: imagem inteira completa, sem CTA swipe up
       case "instagram-stories":
         return (
-          <div className="w-[240px] aspect-[9/16] bg-gradient-to-b from-[hsl(263,70%,20%)] to-[hsl(240,10%,6%)] rounded-2xl overflow-hidden relative flex flex-col items-center justify-between p-6 shadow-2xl shadow-primary/10">
-            <div className="w-full space-y-1 text-center">
-              <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: "hsl(160,84%,39%)" }}>Oferta Imperdível</p>
-              <p className={`text-base font-extrabold leading-tight ${editableClass}`} style={{ color: "hsl(0,0%,95%)" }} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditTitle(e.currentTarget.textContent || "")}>{title}</p>
+          <div className="w-[240px] aspect-[9/16] rounded-2xl overflow-hidden relative shadow-2xl shadow-primary/10">
+            <img src={product.imageUrl} alt={product.name} className="absolute inset-0 w-full h-full object-cover" crossOrigin="anonymous" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[hsl(240,10%,4%,0.75)] via-transparent to-[hsl(240,10%,4%,0.3)]" />
+            <div className="absolute top-4 left-4 right-4 flex justify-between items-start">
+              <span className="px-2 py-1 rounded-md text-[10px] font-bold backdrop-blur-sm" style={{ background: "hsl(263,70%,50%,0.3)", color: "hsl(263,70%,85%)", border: "1px solid hsl(263,70%,50%,0.3)" }}>
+                OFERTA 🔥
+              </span>
+              <span className="px-2.5 py-1 rounded-full text-xs font-extrabold font-mono backdrop-blur-sm" style={{ background: "hsl(160,84%,39%,0.9)", color: "hsl(240,10%,4%)" }}>
+                {product.price}
+              </span>
             </div>
-            <div className="w-36 h-36 rounded-2xl overflow-hidden shadow-2xl ring-2 ring-primary/20">
-              <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" crossOrigin="anonymous" />
-            </div>
-            <div className="space-y-3 text-center w-full">
-              <p className={`text-[11px] px-2 ${editableClass}`} style={{ color: "hsl(0,0%,75%)" }} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditDescription(e.currentTarget.textContent || "")}>{desc.substring(0, 70)}</p>
-              <p className="text-2xl font-extrabold font-mono" style={{ color: "hsl(160,84%,39%)" }}>{product.price}</p>
-              <div className={`w-full py-2.5 rounded-full text-center text-xs font-bold ${editableClass}`} style={{ background: "linear-gradient(135deg, hsl(263,70%,58%), hsl(263,70%,48%))", color: "white" }} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditCta(e.currentTarget.textContent || "")}>
-                ⬆️ {cta.replace(/[🛒🚀👇]/g, "").trim().substring(0, 22)}
-              </div>
+            <div className="absolute bottom-0 left-0 right-0 p-5 space-y-2">
+              <p className={`text-lg font-extrabold leading-tight ${editableClass}`} style={{ color: "hsl(0,0%,100%)", textShadow: "0 2px 8px rgba(0,0,0,0.8)" }} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditTitle(e.currentTarget.textContent || "")}>
+                {title}
+              </p>
+              <p className={`text-[11px] ${editableClass}`} style={{ color: "hsl(0,0%,80%)" }} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditDescription(e.currentTarget.textContent || "")}>
+                {desc.substring(0, 70)}
+              </p>
             </div>
           </div>
         );
 
-      // WhatsApp Status: imagem inteira + título forte
+      // WhatsApp Status: imagem inteira + título forte + QR Code
       case "whatsapp-status":
         return (
           <div className="w-[240px] aspect-[9/16] rounded-2xl overflow-hidden relative shadow-2xl">
             <img src={product.imageUrl} alt={product.name} className="absolute inset-0 w-full h-full object-cover" crossOrigin="anonymous" />
             <div className="absolute inset-0 bg-gradient-to-t from-[hsl(140,20%,8%,0.95)] via-[hsl(140,20%,8%,0.3)] to-[hsl(140,20%,8%,0.4)]" />
-            {/* Top: brand / badge */}
             <div className="absolute top-4 left-4 right-4 flex justify-between items-start">
               <span className="px-2 py-1 rounded-md text-[10px] font-bold backdrop-blur-sm" style={{ background: "hsl(160,84%,39%,0.2)", color: "hsl(160,84%,39%)", border: "1px solid hsl(160,84%,39%,0.3)" }}>
                 OFERTA 🔥
@@ -192,14 +189,23 @@ const TemplatePreview = ({ product, content: initialContent, onBack }: TemplateP
                 {product.price}
               </span>
             </div>
-            {/* Bottom: strong title + CTA */}
             <div className="absolute bottom-0 left-0 right-0 p-5 space-y-3">
-              <p className={`text-lg font-extrabold leading-tight ${editableClass}`} style={{ color: "hsl(0,0%,100%)", textShadow: "0 2px 8px rgba(0,0,0,0.8)" }} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditTitle(e.currentTarget.textContent || "")}>{title}</p>
-              <p className={`text-[11px] ${editableClass}`} style={{ color: "hsl(0,0%,80%)" }} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditDescription(e.currentTarget.textContent || "")}>{desc.substring(0, 80)}</p>
-              <div className={`w-full py-2.5 rounded-full text-center text-xs font-bold ${editableClass}`} style={{ background: "hsl(160,84%,39%)", color: "hsl(240,10%,4%)" }} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditCta(e.currentTarget.textContent || "")}>
-                {cta.replace(/[🛒🚀👇]/g, "").trim().substring(0, 25)}
+              <p className={`text-lg font-extrabold leading-tight ${editableClass}`} style={{ color: "hsl(0,0%,100%)", textShadow: "0 2px 8px rgba(0,0,0,0.8)" }} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditTitle(e.currentTarget.textContent || "")}>
+                {title}
+              </p>
+              <p className={`text-[11px] ${editableClass}`} style={{ color: "hsl(0,0%,80%)" }} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditDescription(e.currentTarget.textContent || "")}>
+                {desc.substring(0, 80)}
+              </p>
+              {/* QR Code do link de afiliado */}
+              <div className="flex items-center gap-3">
+                <div className="p-1.5 rounded-lg" style={{ background: "white" }}>
+                  <QRCodeSVG value={product.link} size={52} level="M" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-[9px] font-medium" style={{ color: "hsl(160,84%,39%)" }}>Escaneie para comprar</p>
+                  <p className="text-[8px]" style={{ color: "hsl(0,0%,60%)" }}>{product.link.substring(0, 30)}...</p>
+                </div>
               </div>
-              <p className="text-[10px] text-center" style={{ color: "hsl(0,0%,60%)" }}>🔗 {product.link.substring(0, 35)}...</p>
             </div>
           </div>
         );
