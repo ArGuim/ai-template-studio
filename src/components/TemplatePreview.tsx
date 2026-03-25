@@ -109,6 +109,7 @@ const TemplatePreview = ({ product, content: initialContent, onBack }: TemplateP
   const title = isEditing ? editTitle : content.titles[0];
   const desc = isEditing ? editDescription : content.description;
   const editableClass = isEditing ? "outline outline-2 outline-dashed outline-primary/40 rounded px-1 focus:outline-primary" : "";
+  const isAmazon = /amazon\.|amzn\./i.test(product.link);
 
   const renderTemplate = () => {
     switch (platform) {
