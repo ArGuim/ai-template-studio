@@ -154,6 +154,9 @@ const TemplatePreview = ({ product, content: initialContent, onBack }: TemplateP
               <p className={`text-sm font-bold leading-tight ${editableClass}`} style={{ color: "hsl(0,0%,95%)" }} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditTitle(e.currentTarget.textContent || "")}>
                 {title.substring(0, 50)}
               </p>
+              {isAmazon && (
+                <p className="text-[10px] mt-1.5 font-medium" style={{ color: "hsl(160,84%,39%)" }}>🔗 Para saber mais, link na bio</p>
+              )}
             </div>
           </div>
         );
@@ -166,11 +169,13 @@ const TemplatePreview = ({ product, content: initialContent, onBack }: TemplateP
             <div className="absolute inset-0 bg-gradient-to-t from-[hsl(240,10%,4%,0.75)] via-transparent to-[hsl(240,10%,4%,0.3)]" />
             <div className="absolute top-4 left-4 right-4 flex justify-between items-start">
               <span className="px-2 py-1 rounded-md text-[10px] font-bold backdrop-blur-sm" style={{ background: "hsl(263,70%,50%,0.3)", color: "hsl(263,70%,85%)", border: "1px solid hsl(263,70%,50%,0.3)" }}>
-                OFERTA 🔥
+                {isAmazon ? "CONFIRA 👀" : "OFERTA 🔥"}
               </span>
-              <span className="px-2.5 py-1 rounded-full text-xs font-extrabold font-mono backdrop-blur-sm" style={{ background: "hsl(160,84%,39%,0.9)", color: "hsl(240,10%,4%)" }}>
-                {product.price}
-              </span>
+              {!isAmazon && (
+                <span className="px-2.5 py-1 rounded-full text-xs font-extrabold font-mono backdrop-blur-sm" style={{ background: "hsl(160,84%,39%,0.9)", color: "hsl(240,10%,4%)" }}>
+                  {product.price}
+                </span>
+              )}
             </div>
             <div className="absolute bottom-0 left-0 right-0 p-5 space-y-2">
               <p className={`text-lg font-extrabold leading-tight ${editableClass}`} style={{ color: "hsl(0,0%,100%)", textShadow: "0 2px 8px rgba(0,0,0,0.8)" }} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditTitle(e.currentTarget.textContent || "")}>
