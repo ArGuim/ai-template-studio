@@ -119,13 +119,6 @@ const TemplatePreview = ({ product, content: initialContent, onBack }: TemplateP
           <div className="w-[320px] aspect-square rounded-2xl overflow-hidden relative shadow-2xl shadow-primary/10">
             <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" crossOrigin="anonymous" />
             <div className="absolute inset-0 bg-gradient-to-t from-[hsl(240,10%,4%,0.7)] via-transparent to-transparent" />
-            {!isAmazon && (
-              <div className="absolute top-4 right-4">
-                <span className="px-3 py-1.5 rounded-full text-sm font-extrabold font-mono backdrop-blur-md" style={{ background: "hsl(160,84%,39%,0.9)", color: "hsl(240,10%,4%)" }}>
-                  {product.price}
-                </span>
-              </div>
-            )}
             <div className="absolute bottom-0 left-0 right-0 p-5">
               <p className={`text-xs font-semibold leading-tight ${editableClass}`} style={{ color: "hsl(0,0%,90%)" }} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditTitle(e.currentTarget.textContent || "")}>
                 {title.substring(0, 60)}
@@ -143,13 +136,6 @@ const TemplatePreview = ({ product, content: initialContent, onBack }: TemplateP
           <div className="w-[320px] aspect-square rounded-2xl overflow-hidden relative shadow-2xl shadow-primary/10">
             <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" crossOrigin="anonymous" />
             <div className="absolute inset-0 bg-gradient-to-t from-[hsl(240,10%,4%,0.5)] via-transparent to-transparent" />
-            {!isAmazon && (
-              <div className="absolute top-4 right-4">
-                <span className="px-3 py-1.5 rounded-full text-sm font-extrabold font-mono backdrop-blur-md" style={{ background: "hsl(160,84%,39%,0.9)", color: "hsl(240,10%,4%)" }}>
-                  {product.price}
-                </span>
-              </div>
-            )}
             <div className="absolute bottom-0 left-0 right-0 p-5">
               <p className={`text-sm font-bold leading-tight ${editableClass}`} style={{ color: "hsl(0,0%,95%)" }} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditTitle(e.currentTarget.textContent || "")}>
                 {title.substring(0, 50)}
@@ -171,11 +157,6 @@ const TemplatePreview = ({ product, content: initialContent, onBack }: TemplateP
               <span className="px-2 py-1 rounded-md text-[10px] font-bold backdrop-blur-sm" style={{ background: "hsl(263,70%,50%,0.3)", color: "hsl(263,70%,85%)", border: "1px solid hsl(263,70%,50%,0.3)" }}>
                 {isAmazon ? "CONFIRA 👀" : "OFERTA 🔥"}
               </span>
-              {!isAmazon && (
-                <span className="px-2.5 py-1 rounded-full text-xs font-extrabold font-mono backdrop-blur-sm" style={{ background: "hsl(160,84%,39%,0.9)", color: "hsl(240,10%,4%)" }}>
-                  {product.price}
-                </span>
-              )}
             </div>
             <div className="absolute bottom-0 left-0 right-0 p-5 space-y-2">
               <p className={`text-lg font-extrabold leading-tight ${editableClass}`} style={{ color: "hsl(0,0%,100%)", textShadow: "0 2px 8px rgba(0,0,0,0.8)" }} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditTitle(e.currentTarget.textContent || "")}>
@@ -201,11 +182,6 @@ const TemplatePreview = ({ product, content: initialContent, onBack }: TemplateP
               <span className="px-2 py-1 rounded-md text-[10px] font-bold backdrop-blur-sm" style={{ background: "hsl(160,84%,39%,0.2)", color: "hsl(160,84%,39%)", border: "1px solid hsl(160,84%,39%,0.3)" }}>
                 {isAmazon ? "CONFIRA 👀" : "OFERTA 🔥"}
               </span>
-              {!isAmazon && (
-                <span className="px-2.5 py-1 rounded-full text-xs font-extrabold font-mono backdrop-blur-sm" style={{ background: "hsl(160,84%,39%,0.9)", color: "hsl(240,10%,4%)" }}>
-                  {product.price}
-                </span>
-              )}
             </div>
             <div className="absolute bottom-0 left-0 right-0 p-5 space-y-3">
               <p className={`text-lg font-extrabold leading-tight ${editableClass}`} style={{ color: "hsl(0,0%,100%)", textShadow: "0 2px 8px rgba(0,0,0,0.8)" }} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditTitle(e.currentTarget.textContent || "")}>
