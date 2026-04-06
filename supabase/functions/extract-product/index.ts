@@ -164,7 +164,7 @@ serve(async (req) => {
   }
 
   try {
-    const { url } = await req.json();
+    const { url, shopeeAppId, shopeeAppSecret } = await req.json();
 
     if (!url || typeof url !== 'string') {
       return new Response(
