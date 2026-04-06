@@ -79,7 +79,6 @@ async function scrapeWithFirecrawl(url: string, apiKey: string, waitFor = 3000):
 
 async function tryShopeeApi(shopId: string, itemId: string): Promise<Record<string, string> | null> {
   try {
-    // Shopee public API (no auth needed for basic product info)
     const apiUrl = `https://shopee.com.br/api/v4/item/get?shopid=${shopId}&itemid=${itemId}`;
     const resp = await fetch(apiUrl, {
       headers: {
@@ -108,13 +107,64 @@ async function tryShopeeApi(shopId: string, itemId: string): Promise<Record<stri
   return null;
 }
 
+async function tryShopeeAffiliateApi(shopId: string, itemId: string, appId: string, appSecret: string): Promise<Record<string, string> | null> {
+  try {
+    const timestamp = Math.floor(Date.now() / 1000);
+    const path = '/api/v2/product/get_item_detail';
+    const baseString = `${appId}${path}${timestamp}`;
+    
+    // Generate HMAC-SHA256 signature
+    const encoder = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      'raw',
+      encoder.encode(appSecret),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+    const signatureBuffer = await crypto.subtle.sign('HMAC', key, encoder.encode(baseString));
+    const signature = Array.from(new Uint8Array(signatureBuffer))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+
+    const apiUrl = `https://partner.shopeemobile.com${path}?partner_id=${appId}&timestamp=${timestamp}&sign=${signature}&shop_id=${shopId}&item_id=${itemId}`;
+    
+    console.log('Trying Shopee Affiliate API...');
+    const resp = await fetch(apiUrl, {
+      headers: { 'Content-Type': 'application/json' },
+    });
+    
+    if (resp.ok) {
+      const data = await resp.json();
+      if (data.response) {
+        const item = data.response;
+        const name = item.item_name || '';
+        const price = item.price_info?.current_price 
+          ? `R$ ${(item.price_info.current_price / 100000).toFixed(2).replace('.', ',')}`
+          : '';
+        const description = (item.description || '').slice(0, 150);
+        const imageUrl = item.image?.image_url_list?.[0] || '';
+        
+        console.log('Shopee Affiliate API success:', name);
+        return { name, price, description, imageUrl };
+      }
+    } else {
+      const errText = await resp.text();
+      console.log('Shopee Affiliate API error:', resp.status, errText);
+    }
+  } catch (e) {
+    console.log('Shopee Affiliate API failed:', e);
+  }
+  return null;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { url } = await req.json();
+    const { url, shopeeAppId, shopeeAppSecret } = await req.json();
 
     if (!url || typeof url !== 'string') {
       return new Response(
@@ -154,10 +204,31 @@ serve(async (req) => {
       formattedUrl = await resolveShortUrl(formattedUrl);
     }
 
-    // Try Shopee public API first if we can extract IDs
+    // Try Shopee APIs if we can extract IDs
     if (isShopee) {
       const { shopId, itemId } = extractShopeeIdFromUrl(formattedUrl);
       if (shopId && itemId) {
+        // Try affiliate API first if credentials provided
+        if (shopeeAppId && shopeeAppSecret) {
+          const affiliateData = await tryShopeeAffiliateApi(shopId, itemId, shopeeAppId, shopeeAppSecret);
+          if (affiliateData && affiliateData.name && affiliateData.name !== '') {
+            return new Response(
+              JSON.stringify({
+                success: true,
+                product: {
+                  name: affiliateData.name,
+                  price: affiliateData.price,
+                  description: affiliateData.description,
+                  imageUrl: affiliateData.imageUrl,
+                  link: formattedUrl,
+                },
+              }),
+              { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          }
+        }
+
+        // Fallback to public API
         const shopeeData = await tryShopeeApi(shopId, itemId);
         if (shopeeData && shopeeData.name && shopeeData.name !== '') {
           return new Response(

@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Link2, Sparkles, Loader2, Package, DollarSign, FileText, Image as ImageIcon, AlertCircle, ArrowRight, ChevronDown, ChevronUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { getApiConfig } from "@/components/ApiSettings";
 
 interface ProductData {
   name: string;
@@ -41,8 +42,13 @@ const ProductInput = ({ onProductReady }: ProductInputProps) => {
     setExtractError(null);
 
     try {
+      const apiConfig = getApiConfig();
       const { data, error } = await supabase.functions.invoke("extract-product", {
-        body: { url: link.trim() },
+        body: { 
+          url: link.trim(),
+          shopeeAppId: apiConfig.shopeeAppId,
+          shopeeAppSecret: apiConfig.shopeeAppSecret,
+        },
       });
 
       if (error) throw error;
