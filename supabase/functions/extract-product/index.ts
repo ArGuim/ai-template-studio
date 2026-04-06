@@ -5,6 +5,109 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
+function isShopeeUrl(url: string): boolean {
+  return /shopee\.|s\.shopee\.|shp\.ee/i.test(url);
+}
+
+function isLoginOrBlockedPage(markdown: string, title: string): boolean {
+  const blockedPatterns = [
+    /p[aá]gina de login/i,
+    /fazer login/i,
+    /sign in/i,
+    /log in to/i,
+    /captcha/i,
+    /acesse sua conta/i,
+    /entre na sua conta/i,
+  ];
+  const combined = `${title} ${markdown.slice(0, 1000)}`;
+  return blockedPatterns.some(p => p.test(combined));
+}
+
+async function resolveShortUrl(url: string): Promise<string> {
+  try {
+    const resp = await fetch(url, { method: 'HEAD', redirect: 'follow' });
+    const finalUrl = resp.url;
+    if (finalUrl && finalUrl !== url) {
+      console.log('Resolved short URL:', url, '->', finalUrl);
+      return finalUrl;
+    }
+  } catch (e) {
+    console.log('Could not resolve short URL:', e);
+  }
+  return url;
+}
+
+function extractShopeeIdFromUrl(url: string): { shopId?: string; itemId?: string } {
+  // Shopee product URLs: shopee.com.br/product-name-i.SHOP_ID.ITEM_ID
+  const match = url.match(/i\.(\d+)\.(\d+)/);
+  if (match) {
+    return { shopId: match[1], itemId: match[2] };
+  }
+  return {};
+}
+
+async function scrapeWithFirecrawl(url: string, apiKey: string, waitFor = 3000): Promise<{ markdown: string; metadata: Record<string, string> }> {
+  const response = await fetch('https://api.firecrawl.dev/v1/scrape', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      url,
+      formats: ['markdown'],
+      onlyMainContent: true,
+      waitFor,
+    }),
+  });
+
+  if (!response.ok) {
+    const errData = await response.text();
+    console.error('Firecrawl error:', response.status, errData);
+    if (response.status === 402) {
+      throw { status: 402, message: 'Créditos do Firecrawl insuficientes. Atualize seu plano.' };
+    }
+    throw { status: 500, message: `Erro ao acessar a página (${response.status})` };
+  }
+
+  const data = await response.json();
+  return {
+    markdown: data.data?.markdown || data.markdown || '',
+    metadata: data.data?.metadata || data.metadata || {},
+  };
+}
+
+async function tryShopeeApi(shopId: string, itemId: string): Promise<Record<string, string> | null> {
+  try {
+    // Shopee public API (no auth needed for basic product info)
+    const apiUrl = `https://shopee.com.br/api/v4/item/get?shopid=${shopId}&itemid=${itemId}`;
+    const resp = await fetch(apiUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 Chrome/120.0.0.0 Mobile Safari/537.36',
+        'Accept': 'application/json',
+        'Referer': 'https://shopee.com.br/',
+      },
+    });
+    
+    if (resp.ok) {
+      const data = await resp.json();
+      const item = data.data;
+      if (item) {
+        const name = item.name || '';
+        const price = item.price ? `R$ ${(item.price / 100000).toFixed(2).replace('.', ',')}` : '';
+        const description = (item.description || '').slice(0, 150);
+        const imageUrl = item.image ? `https://down-br.img.susercontent.com/file/${item.image}` : '';
+        
+        console.log('Shopee API success:', name);
+        return { name, price, description, imageUrl };
+      }
+    }
+  } catch (e) {
+    console.log('Shopee API fallback failed:', e);
+  }
+  return null;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -44,143 +147,107 @@ serve(async (req) => {
 
     console.log('Scraping product URL:', formattedUrl);
 
-    // Step 1: Scrape with Firecrawl
-    const scrapeResponse = await fetch('https://api.firecrawl.dev/v1/scrape', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${FIRECRAWL_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        url: formattedUrl,
-        formats: ['markdown'],
-        onlyMainContent: true,
-        waitFor: 3000,
-      }),
-    });
+    const isShopee = isShopeeUrl(formattedUrl);
 
-    if (!scrapeResponse.ok) {
-      const errData = await scrapeResponse.text();
-      console.error('Firecrawl error:', scrapeResponse.status, errData);
+    // For Shopee short links, resolve to full URL first
+    if (isShopee && (formattedUrl.includes('s.shopee') || formattedUrl.includes('shp.ee'))) {
+      formattedUrl = await resolveShortUrl(formattedUrl);
+    }
 
-      if (scrapeResponse.status === 402) {
-        return new Response(
-          JSON.stringify({ success: false, error: 'Créditos do Firecrawl insuficientes. Atualize seu plano.' }),
-          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+    // Try Shopee public API first if we can extract IDs
+    if (isShopee) {
+      const { shopId, itemId } = extractShopeeIdFromUrl(formattedUrl);
+      if (shopId && itemId) {
+        const shopeeData = await tryShopeeApi(shopId, itemId);
+        if (shopeeData && shopeeData.name && shopeeData.name !== '') {
+          return new Response(
+            JSON.stringify({
+              success: true,
+              product: {
+                name: shopeeData.name,
+                price: shopeeData.price,
+                description: shopeeData.description,
+                imageUrl: shopeeData.imageUrl,
+                link: formattedUrl,
+              },
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
       }
+    }
 
+    // Scrape with Firecrawl (longer wait for Shopee)
+    let scrapeResult;
+    try {
+      scrapeResult = await scrapeWithFirecrawl(formattedUrl, FIRECRAWL_API_KEY, isShopee ? 8000 : 3000);
+    } catch (e: any) {
       return new Response(
-        JSON.stringify({ success: false, error: `Erro ao acessar a página (${scrapeResponse.status})` }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ success: false, error: e.message }),
+        { status: e.status || 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const scrapeData = await scrapeResponse.json();
-    const markdown = scrapeData.data?.markdown || scrapeData.markdown || '';
-    const metadata = scrapeData.data?.metadata || scrapeData.metadata || {};
+    const { markdown, metadata } = scrapeResult;
 
-    if (!markdown) {
+    // Check if we got a login/blocked page
+    if (!markdown || isLoginOrBlockedPage(markdown, metadata.title || '')) {
+      // For Shopee, try Google search as fallback
+      if (isShopee) {
+        console.log('Shopee login page detected, trying Google search fallback...');
+        
+        // Try scraping Google search for this product
+        const searchQuery = formattedUrl.replace(/https?:\/\//g, '');
+        try {
+          const googleResult = await scrapeWithFirecrawl(
+            `https://www.google.com/search?q=site:shopee.com.br+${encodeURIComponent(searchQuery)}`,
+            FIRECRAWL_API_KEY,
+            3000
+          );
+          
+          if (googleResult.markdown) {
+            // Extract basic info from Google snippet
+            const aiResponse = await callAI(LOVABLE_API_KEY, formattedUrl, googleResult.markdown, googleResult.metadata);
+            if (aiResponse) {
+              return new Response(
+                JSON.stringify({
+                  success: true,
+                  product: {
+                    name: aiResponse.name || 'Produto Shopee',
+                    price: aiResponse.price || '',
+                    description: aiResponse.description || '',
+                    imageUrl: aiResponse.imageUrl || '',
+                    link: formattedUrl,
+                  },
+                }),
+                { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+              );
+            }
+          }
+        } catch (e) {
+          console.log('Google search fallback failed:', e);
+        }
+      }
+
       return new Response(
-        JSON.stringify({ success: false, error: 'Não foi possível extrair conteúdo da página' }),
+        JSON.stringify({
+          success: false,
+          error: isShopee 
+            ? 'A Shopee bloqueou a extração automática. Por favor, preencha os dados manualmente.'
+            : 'Não foi possível extrair conteúdo da página',
+        }),
         { status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     console.log('Scrape successful, extracting product data with AI...');
 
-    // Step 2: Use Lovable AI to structure the scraped data
-    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          {
-            role: "system",
-            content: `Você é um extrator de dados de produtos. A partir do conteúdo de uma página de produto, extraia as informações principais.
-
-Responda APENAS com JSON válido, sem markdown, sem explicação:
-{
-  "name": "nome do produto",
-  "price": "preço com moeda (ex: R$ 89,90)",
-  "description": "descrição curta do produto (máx 150 caracteres)",
-  "imageUrl": "URL da imagem principal do produto (se encontrada no conteúdo)"
-}
-
-Se não encontrar algum campo, use string vazia "".`
-          },
-          {
-            role: "user",
-            content: `URL: ${formattedUrl}
-Título da página: ${metadata.title || ''}
-Descrição meta: ${metadata.description || ''}
-
-Conteúdo da página:
-${markdown.slice(0, 4000)}`
-          },
-        ],
-        tools: [
-          {
-            type: "function",
-            function: {
-              name: "extract_product",
-              description: "Extract product data from page content",
-              parameters: {
-                type: "object",
-                properties: {
-                  name: { type: "string", description: "Product name" },
-                  price: { type: "string", description: "Product price with currency" },
-                  description: { type: "string", description: "Short product description" },
-                  imageUrl: { type: "string", description: "Main product image URL" },
-                },
-                required: ["name", "price", "description", "imageUrl"],
-                additionalProperties: false,
-              },
-            },
-          },
-        ],
-        tool_choice: { type: "function", function: { name: "extract_product" } },
-      }),
-    });
-
-    if (!aiResponse.ok) {
-      if (aiResponse.status === 429) {
-        return new Response(
-          JSON.stringify({ success: false, error: 'Limite de requisições atingido. Tente novamente em alguns segundos.' }),
-          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      const errText = await aiResponse.text();
-      console.error('AI gateway error:', aiResponse.status, errText);
-      throw new Error(`AI error: ${aiResponse.status}`);
-    }
-
-    const aiData = await aiResponse.json();
-    
-    // Parse tool call response
-    let product;
-    const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
-    if (toolCall?.function?.arguments) {
-      try {
-        product = JSON.parse(toolCall.function.arguments);
-      } catch {
-        console.error('Failed to parse tool call:', toolCall.function.arguments);
-        throw new Error('Failed to parse AI response');
-      }
-    } else {
-      // Fallback: try parsing from content
-      const rawContent = aiData.choices?.[0]?.message?.content || '';
-      try {
-        const cleaned = rawContent.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
-        product = JSON.parse(cleaned);
-      } catch {
-        console.error('Failed to parse AI content:', rawContent);
-        throw new Error('Failed to parse AI response');
-      }
+    const product = await callAI(LOVABLE_API_KEY, formattedUrl, markdown, metadata);
+    if (!product) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Não foi possível processar os dados do produto' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     console.log('Product extracted:', product.name);
@@ -206,3 +273,93 @@ ${markdown.slice(0, 4000)}`
     );
   }
 });
+
+async function callAI(apiKey: string, url: string, markdown: string, metadata: Record<string, string>): Promise<Record<string, string> | null> {
+  const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "google/gemini-3-flash-preview",
+      messages: [
+        {
+          role: "system",
+          content: `Você é um extrator de dados de produtos. A partir do conteúdo de uma página de produto, extraia as informações principais.
+
+Responda APENAS com JSON válido, sem markdown, sem explicação:
+{
+  "name": "nome do produto",
+  "price": "preço com moeda (ex: R$ 89,90)",
+  "description": "descrição curta do produto (máx 150 caracteres)",
+  "imageUrl": "URL da imagem principal do produto (se encontrada no conteúdo)"
+}
+
+Se não encontrar algum campo, use string vazia "".
+IMPORTANTE: Tente sempre encontrar a URL da imagem do produto. Procure por URLs de imagem nos formatos: ![](url), src="url", og:image, etc.`
+        },
+        {
+          role: "user",
+          content: `URL: ${url}
+Título da página: ${metadata.title || ''}
+Descrição meta: ${metadata.description || ''}
+
+Conteúdo da página:
+${markdown.slice(0, 4000)}`
+        },
+      ],
+      tools: [
+        {
+          type: "function",
+          function: {
+            name: "extract_product",
+            description: "Extract product data from page content",
+            parameters: {
+              type: "object",
+              properties: {
+                name: { type: "string", description: "Product name" },
+                price: { type: "string", description: "Product price with currency" },
+                description: { type: "string", description: "Short product description" },
+                imageUrl: { type: "string", description: "Main product image URL" },
+              },
+              required: ["name", "price", "description", "imageUrl"],
+              additionalProperties: false,
+            },
+          },
+        },
+      ],
+      tool_choice: { type: "function", function: { name: "extract_product" } },
+    }),
+  });
+
+  if (!aiResponse.ok) {
+    if (aiResponse.status === 429) {
+      throw new Error('Limite de requisições atingido. Tente novamente em alguns segundos.');
+    }
+    const errText = await aiResponse.text();
+    console.error('AI gateway error:', aiResponse.status, errText);
+    return null;
+  }
+
+  const aiData = await aiResponse.json();
+
+  const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
+  if (toolCall?.function?.arguments) {
+    try {
+      return JSON.parse(toolCall.function.arguments);
+    } catch {
+      console.error('Failed to parse tool call:', toolCall.function.arguments);
+    }
+  }
+
+  const rawContent = aiData.choices?.[0]?.message?.content || '';
+  try {
+    const cleaned = rawContent.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+    return JSON.parse(cleaned);
+  } catch {
+    console.error('Failed to parse AI content:', rawContent);
+  }
+
+  return null;
+}
