@@ -42,8 +42,13 @@ const ProductInput = ({ onProductReady }: ProductInputProps) => {
     setExtractError(null);
 
     try {
+      const apiConfig = getApiConfig();
       const { data, error } = await supabase.functions.invoke("extract-product", {
-        body: { url: link.trim() },
+        body: { 
+          url: link.trim(),
+          shopeeAppId: apiConfig.shopeeAppId,
+          shopeeAppSecret: apiConfig.shopeeAppSecret,
+        },
       });
 
       if (error) throw error;

@@ -52,6 +52,7 @@ const ApiSettings = () => {
   const fields = [
     { key: "amazonTag" as const, label: "Amazon Associate Tag", placeholder: "seu-tag-20", help: "Tag de afiliado da Amazon para links otimizados" },
     { key: "shopeeAppId" as const, label: "Shopee App ID", placeholder: "ID da aplicação Shopee", help: "ID do programa de afiliados da Shopee" },
+    { key: "shopeeAppSecret" as const, label: "Shopee App Secret", placeholder: "Secret key da Shopee", help: "Chave secreta do programa de afiliados da Shopee" },
     { key: "mercadoLivreToken" as const, label: "Mercado Livre Token", placeholder: "Token de acesso ML", help: "Token do programa de desenvolvedores do Mercado Livre" },
   ];
 
