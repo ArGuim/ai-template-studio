@@ -38,10 +38,15 @@ async function resolveShortUrl(url: string): Promise<string> {
 }
 
 function extractShopeeIdFromUrl(url: string): { shopId?: string; itemId?: string } {
-  // Shopee product URLs: shopee.com.br/product-name-i.SHOP_ID.ITEM_ID
-  const match = url.match(/i\.(\d+)\.(\d+)/);
-  if (match) {
-    return { shopId: match[1], itemId: match[2] };
+  // Format: product-name-i.SHOP_ID.ITEM_ID
+  const match1 = url.match(/i\.(\d+)\.(\d+)/);
+  if (match1) {
+    return { shopId: match1[1], itemId: match1[2] };
+  }
+  // Format: /product/SHOP_ID/ITEM_ID or /opaanlp/SHOP_ID/ITEM_ID or any /path/SHOP_ID/ITEM_ID
+  const match2 = url.match(/shopee\.com\.br\/[^/]+\/(\d{5,})\/(\d{5,})/);
+  if (match2) {
+    return { shopId: match2[1], itemId: match2[2] };
   }
   return {};
 }
