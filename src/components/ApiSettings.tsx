@@ -6,6 +6,7 @@ import { Settings, Save, Check, Eye, EyeOff, Info } from "lucide-react";
 interface ApiConfig {
   amazonTag?: string;
   shopeeAppId?: string;
+  shopeeAppSecret?: string;
   mercadoLivreToken?: string;
 }
 
