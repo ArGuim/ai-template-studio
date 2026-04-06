@@ -204,10 +204,31 @@ serve(async (req) => {
       formattedUrl = await resolveShortUrl(formattedUrl);
     }
 
-    // Try Shopee public API first if we can extract IDs
+    // Try Shopee APIs if we can extract IDs
     if (isShopee) {
       const { shopId, itemId } = extractShopeeIdFromUrl(formattedUrl);
       if (shopId && itemId) {
+        // Try affiliate API first if credentials provided
+        if (shopeeAppId && shopeeAppSecret) {
+          const affiliateData = await tryShopeeAffiliateApi(shopId, itemId, shopeeAppId, shopeeAppSecret);
+          if (affiliateData && affiliateData.name && affiliateData.name !== '') {
+            return new Response(
+              JSON.stringify({
+                success: true,
+                product: {
+                  name: affiliateData.name,
+                  price: affiliateData.price,
+                  description: affiliateData.description,
+                  imageUrl: affiliateData.imageUrl,
+                  link: formattedUrl,
+                },
+              }),
+              { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          }
+        }
+
+        // Fallback to public API
         const shopeeData = await tryShopeeApi(shopId, itemId);
         if (shopeeData && shopeeData.name && shopeeData.name !== '') {
           return new Response(
