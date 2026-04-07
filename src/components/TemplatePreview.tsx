@@ -42,6 +42,7 @@ const TemplatePreview = ({ product, content: initialContent, onBack }: TemplateP
   const [copied, setCopied] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [verticalImageFit, setVerticalImageFit] = useState<"contain" | "cover">("cover");
   const [content, setContent] = useState<GeneratedContent>(initialContent);
   const [editTitle, setEditTitle] = useState(content.titles[0]);
   const [editDescription, setEditDescription] = useState(content.description);
@@ -106,10 +107,17 @@ const TemplatePreview = ({ product, content: initialContent, onBack }: TemplateP
     }
   }, [platform, product, content, toast]);
 
+  const isAmazon = /amazon\.|amzn\./i.test(product.link);
   const title = isEditing ? editTitle : content.titles[0];
   const desc = isEditing ? editDescription : content.description;
+  const ctaText = isAmazon ? "Para saber mais, link na bio" : (isEditing ? editCta : content.cta);
   const editableClass = isEditing ? "outline outline-2 outline-dashed outline-primary/40 rounded px-1 focus:outline-primary" : "";
-  const isAmazon = /amazon\.|amzn\./i.test(product.link);
+
+  const handleVerticalImageLoad = useCallback((event: React.SyntheticEvent<HTMLImageElement>) => {
+    const { naturalWidth, naturalHeight } = event.currentTarget;
+    if (!naturalWidth || !naturalHeight) return;
+    setVerticalImageFit(naturalWidth > naturalHeight ? "contain" : "cover");
+  }, []);
 
   const renderTemplate = () => {
     switch (platform) {
@@ -150,24 +158,23 @@ const TemplatePreview = ({ product, content: initialContent, onBack }: TemplateP
       // Instagram Stories: imagem inteira completa, sem CTA swipe up
       case "instagram-stories":
         return (
-          <div className="w-[240px] aspect-[9/16] rounded-2xl overflow-hidden relative shadow-2xl shadow-primary/10">
-            <img src={product.imageUrl} alt={product.name} className="absolute inset-0 w-full h-full object-cover" crossOrigin="anonymous" />
-            <div className="absolute inset-0 bg-gradient-to-t from-[hsl(240,10%,4%,0.75)] via-transparent to-[hsl(240,10%,4%,0.3)]" />
-            <div className="absolute top-4 left-4 right-4 flex justify-between items-start">
-              <span className="px-2 py-1 rounded-md text-[10px] font-bold backdrop-blur-sm" style={{ background: "hsl(263,70%,50%,0.3)", color: "hsl(263,70%,85%)", border: "1px solid hsl(263,70%,50%,0.3)" }}>
-                {isAmazon ? "CONFIRA 👀" : "OFERTA 🔥"}
-              </span>
-            </div>
-            <div className="absolute bottom-0 left-0 right-0 p-5 space-y-2">
-              <p className={`text-lg font-extrabold leading-tight ${editableClass}`} style={{ color: "hsl(0,0%,100%)", textShadow: "0 2px 8px rgba(0,0,0,0.8)" }} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditTitle(e.currentTarget.textContent || "")}>
-                {title}
+          <div className="w-[240px] aspect-[9/16] rounded-2xl overflow-hidden relative bg-muted">
+            <img
+              src={product.imageUrl}
+              alt={product.name}
+              className={`absolute inset-0 w-full h-full ${verticalImageFit === "contain" ? "object-contain p-2" : "object-cover"}`}
+              crossOrigin="anonymous"
+              onLoad={handleVerticalImageLoad}
+            />
+            <div className="absolute inset-x-4 bottom-4 px-2 py-1">
+              <p
+                className={`text-center text-sm font-semibold text-foreground ${editableClass}`}
+                contentEditable={isEditing}
+                suppressContentEditableWarning
+                onBlur={(e) => isEditing && setEditCta(e.currentTarget.textContent || "")}
+              >
+                {ctaText}
               </p>
-              <p className={`text-[11px] ${editableClass}`} style={{ color: "hsl(0,0%,80%)" }} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditDescription(e.currentTarget.textContent || "")}>
-                {desc.substring(0, 70)}
-              </p>
-              {isAmazon && (
-                <p className="text-xs font-semibold mt-1" style={{ color: "hsl(160,84%,39%)" }}>🔗 Para saber mais, link na bio</p>
-              )}
             </div>
           </div>
         );
