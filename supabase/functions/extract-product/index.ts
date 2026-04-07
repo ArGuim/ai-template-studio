@@ -24,15 +24,24 @@ function isLoginOrBlockedPage(markdown: string, title: string): boolean {
 }
 
 async function resolveShortUrl(url: string): Promise<string> {
-  try {
-    const resp = await fetch(url, { method: 'HEAD', redirect: 'follow' });
-    const finalUrl = resp.url;
-    if (finalUrl && finalUrl !== url) {
-      console.log('Resolved short URL:', url, '->', finalUrl);
-      return finalUrl;
+  for (const method of ['HEAD', 'GET']) {
+    try {
+      const resp = await fetch(url, {
+        method,
+        redirect: 'follow',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 Chrome/120.0.0.0 Mobile Safari/537.36',
+          'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8',
+        },
+      });
+      const finalUrl = resp.url;
+      if (finalUrl && finalUrl !== url) {
+        console.log('Resolved short URL:', url, '->', finalUrl);
+        return finalUrl;
+      }
+    } catch (e) {
+      console.log(`Could not resolve short URL with ${method}:`, e);
     }
-  } catch (e) {
-    console.log('Could not resolve short URL:', e);
   }
   return url;
 }
@@ -114,45 +123,62 @@ async function tryShopeeApi(shopId: string, itemId: string): Promise<Record<stri
 
 async function tryShopeeAffiliateApi(shopId: string, itemId: string, appId: string, appSecret: string): Promise<Record<string, string> | null> {
   try {
-    const timestamp = Math.floor(Date.now() / 1000);
-    const path = '/api/v2/product/get_item_detail';
-    const baseString = `${appId}${path}${timestamp}`;
-    
-    // Generate HMAC-SHA256 signature
+    const timestamp = Math.floor(Date.now() / 1000).toString();
+    const payload = JSON.stringify({
+      operationName: 'ProductByIds',
+      query: `query ProductByIds($itemId: Int, $shopId: Int, $page: Int!, $limit: Int!) {
+        productOfferV2(itemId: $itemId, shopId: $shopId, page: $page, limit: $limit) {
+          nodes {
+            itemId
+            shopId
+            productName
+            productLink
+            offerLink
+            imageUrl
+            priceMin
+            priceMax
+          }
+        }
+      }`,
+      variables: {
+        itemId: Number(itemId),
+        shopId: Number(shopId),
+        page: 1,
+        limit: 5,
+      },
+    });
+
     const encoder = new TextEncoder();
-    const key = await crypto.subtle.importKey(
-      'raw',
-      encoder.encode(appSecret),
-      { name: 'HMAC', hash: 'SHA-256' },
-      false,
-      ['sign']
-    );
-    const signatureBuffer = await crypto.subtle.sign('HMAC', key, encoder.encode(baseString));
+    const signatureBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(`${appId}${timestamp}${payload}${appSecret}`));
     const signature = Array.from(new Uint8Array(signatureBuffer))
-      .map(b => b.toString(16).padStart(2, '0'))
+      .map((b) => b.toString(16).padStart(2, '0'))
       .join('');
 
-    const apiUrl = `https://partner.shopeemobile.com${path}?partner_id=${appId}&timestamp=${timestamp}&sign=${signature}&shop_id=${shopId}&item_id=${itemId}`;
-    
     console.log('Trying Shopee Affiliate API...');
-    const resp = await fetch(apiUrl, {
-      headers: { 'Content-Type': 'application/json' },
+    const resp = await fetch('https://open-api.affiliate.shopee.com.br/graphql', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `SHA256 Credential=${appId}, Timestamp=${timestamp}, Signature=${signature}`,
+      },
+      body: payload,
     });
-    
+
     if (resp.ok) {
       const data = await resp.json();
-      if (data.response) {
-        const item = data.response;
-        const name = item.item_name || '';
-        const price = item.price_info?.current_price 
-          ? `R$ ${(item.price_info.current_price / 100000).toFixed(2).replace('.', ',')}`
-          : '';
-        const description = (item.description || '').slice(0, 150);
-        const imageUrl = item.image?.image_url_list?.[0] || '';
-        
+      const nodes = data?.data?.productOfferV2?.nodes || [];
+      const item = nodes.find((node: any) => String(node.itemId) === itemId && String(node.shopId) === shopId);
+      if (item) {
+        const name = item.productName || '';
+        const priceNumber = Number(item.priceMin || item.priceMax || 0);
+        const price = priceNumber > 0 ? `R$ ${(priceNumber / 100000).toFixed(2).replace('.', ',')}` : '';
+        const imageUrl = item.imageUrl || '';
+        const link = item.offerLink || item.productLink || '';
+
         console.log('Shopee Affiliate API success:', name);
-        return { name, price, description, imageUrl };
+        return { name, price, description: '', imageUrl, link };
       }
+      console.log('Shopee Affiliate API returned no exact item match');
     } else {
       const errText = await resp.text();
       console.log('Shopee Affiliate API error:', resp.status, errText);
@@ -170,6 +196,8 @@ serve(async (req) => {
 
   try {
     const { url, shopeeAppId, shopeeAppSecret } = await req.json();
+    const normalizedShopeeAppId = typeof shopeeAppId === 'string' ? shopeeAppId.trim() : '';
+    const normalizedShopeeAppSecret = typeof shopeeAppSecret === 'string' ? shopeeAppSecret.trim() : '';
 
     if (!url || typeof url !== 'string') {
       return new Response(
@@ -214,8 +242,8 @@ serve(async (req) => {
       const { shopId, itemId } = extractShopeeIdFromUrl(formattedUrl);
       if (shopId && itemId) {
         // Try affiliate API first if credentials provided
-        if (shopeeAppId && shopeeAppSecret) {
-          const affiliateData = await tryShopeeAffiliateApi(shopId, itemId, shopeeAppId, shopeeAppSecret);
+        if (normalizedShopeeAppId && normalizedShopeeAppSecret) {
+          const affiliateData = await tryShopeeAffiliateApi(shopId, itemId, normalizedShopeeAppId, normalizedShopeeAppSecret);
           if (affiliateData && affiliateData.name && affiliateData.name !== '') {
             return new Response(
               JSON.stringify({
@@ -225,7 +253,7 @@ serve(async (req) => {
                   price: affiliateData.price,
                   description: affiliateData.description,
                   imageUrl: affiliateData.imageUrl,
-                  link: formattedUrl,
+                  link: affiliateData.link || formattedUrl,
                 },
               }),
               { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -268,41 +296,8 @@ serve(async (req) => {
 
     // Check if we got a login/blocked page
     if (!markdown || isLoginOrBlockedPage(markdown, metadata.title || '')) {
-      // For Shopee, try Google search as fallback
       if (isShopee) {
-        console.log('Shopee login page detected, trying Google search fallback...');
-        
-        // Try scraping Google search for this product
-        const searchQuery = formattedUrl.replace(/https?:\/\//g, '');
-        try {
-          const googleResult = await scrapeWithFirecrawl(
-            `https://www.google.com/search?q=site:shopee.com.br+${encodeURIComponent(searchQuery)}`,
-            FIRECRAWL_API_KEY,
-            3000
-          );
-          
-          if (googleResult.markdown) {
-            // Extract basic info from Google snippet
-            const aiResponse = await callAI(LOVABLE_API_KEY, formattedUrl, googleResult.markdown, googleResult.metadata);
-            if (aiResponse) {
-              return new Response(
-                JSON.stringify({
-                  success: true,
-                  product: {
-                    name: aiResponse.name || 'Produto Shopee',
-                    price: aiResponse.price || '',
-                    description: aiResponse.description || '',
-                    imageUrl: aiResponse.imageUrl || '',
-                    link: formattedUrl,
-                  },
-                }),
-                { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-              );
-            }
-          }
-        } catch (e) {
-          console.log('Google search fallback failed:', e);
-        }
+        console.log('Shopee blocked after short-link resolution; skipping Google AI fallback to avoid wrong products.');
       }
 
       return new Response(
