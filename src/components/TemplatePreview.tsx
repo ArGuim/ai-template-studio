@@ -107,11 +107,11 @@ const TemplatePreview = ({ product, content: initialContent, onBack }: TemplateP
     }
   }, [platform, product, content, toast]);
 
+  const isAmazon = /amazon\.|amzn\./i.test(product.link);
   const title = isEditing ? editTitle : content.titles[0];
   const desc = isEditing ? editDescription : content.description;
   const ctaText = isAmazon ? "Para saber mais, link na bio" : (isEditing ? editCta : content.cta);
   const editableClass = isEditing ? "outline outline-2 outline-dashed outline-primary/40 rounded px-1 focus:outline-primary" : "";
-  const isAmazon = /amazon\.|amzn\./i.test(product.link);
 
   const handleVerticalImageLoad = useCallback((event: React.SyntheticEvent<HTMLImageElement>) => {
     const { naturalWidth, naturalHeight } = event.currentTarget;
@@ -166,7 +166,7 @@ const TemplatePreview = ({ product, content: initialContent, onBack }: TemplateP
               crossOrigin="anonymous"
               onLoad={handleVerticalImageLoad}
             />
-            <div className="absolute inset-x-4 bottom-4 rounded-xl bg-background/80 px-3 py-2">
+            <div className="absolute inset-x-4 bottom-4 px-2 py-1">
               <p
                 className={`text-center text-sm font-semibold text-foreground ${editableClass}`}
                 contentEditable={isEditing}
