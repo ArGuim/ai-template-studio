@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Instagram, MessageCircle, Pin, Copy, Check, Download, Sparkles, Edit3, Save, Image as ImageIcon } from "lucide-react";
+import { Instagram, MessageCircle, Copy, Check, Download, Sparkles, Edit3, Save, Image as ImageIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import html2canvas from "html2canvas";
 import { saveToHistory } from "@/lib/history";
@@ -22,7 +22,7 @@ interface GeneratedContent {
   caption: string;
 }
 
-type Platform = "instagram-post" | "instagram-feed" | "instagram-stories" | "whatsapp-status";
+type Platform = "instagram-post" | "instagram-stories" | "whatsapp-status";
 
 interface TemplatePreviewProps {
   product: ProductData;
@@ -31,9 +31,8 @@ interface TemplatePreviewProps {
 }
 
 const platforms: { id: Platform; label: string; icon: React.ReactNode; hint: string }[] = [
-  { id: "instagram-post", label: "IG Post", icon: <ImageIcon className="w-4 h-4" />, hint: "Foco em imagem" },
-  { id: "instagram-feed", label: "IG Feed", icon: <Instagram className="w-4 h-4" />, hint: "Imagem limpa" },
-  { id: "instagram-stories", label: "Stories", icon: <Instagram className="w-4 h-4" />, hint: "Imagem inteira" },
+  { id: "instagram-post", label: "IG Post", icon: <ImageIcon className="w-4 h-4" />, hint: "Imagem + QR Code" },
+  { id: "instagram-stories", label: "Stories", icon: <Instagram className="w-4 h-4" />, hint: "Imagem + QR Code" },
   { id: "whatsapp-status", label: "WhatsApp", icon: <MessageCircle className="w-4 h-4" />, hint: "Imagem + QR Code" },
 ];
 
@@ -42,13 +41,18 @@ const TemplatePreview = ({ product, content: initialContent, onBack }: TemplateP
   const [copied, setCopied] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [verticalImageFit, setVerticalImageFit] = useState<"contain" | "cover">("cover");
+  const [imageFit, setImageFit] = useState<"contain" | "cover">("cover");
   const [content, setContent] = useState<GeneratedContent>(initialContent);
   const [editTitle, setEditTitle] = useState(content.titles[0]);
   const [editDescription, setEditDescription] = useState(content.description);
   const [editCta, setEditCta] = useState(content.cta);
   const templateRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+
+  const isAmazon = /amazon\.|amzn\./i.test(product.link);
+  const title = isEditing ? editTitle : content.titles[0];
+  const ctaText = isAmazon ? "Para saber mais, link na bio" : (isEditing ? editCta : content.cta);
+  const editableClass = isEditing ? "outline outline-2 outline-dashed outline-primary/40 rounded px-1 focus:outline-primary" : "";
 
   const toggleEdit = () => {
     if (isEditing) {
@@ -107,106 +111,79 @@ const TemplatePreview = ({ product, content: initialContent, onBack }: TemplateP
     }
   }, [platform, product, content, toast]);
 
-  const isAmazon = /amazon\.|amzn\./i.test(product.link);
-  const title = isEditing ? editTitle : content.titles[0];
-  const desc = isEditing ? editDescription : content.description;
-  const ctaText = isAmazon ? "Para saber mais, link na bio" : (isEditing ? editCta : content.cta);
-  const editableClass = isEditing ? "outline outline-2 outline-dashed outline-primary/40 rounded px-1 focus:outline-primary" : "";
-
-  const handleVerticalImageLoad = useCallback((event: React.SyntheticEvent<HTMLImageElement>) => {
+  const handleImageLoad = useCallback((event: React.SyntheticEvent<HTMLImageElement>) => {
     const { naturalWidth, naturalHeight } = event.currentTarget;
     if (!naturalWidth || !naturalHeight) return;
-    setVerticalImageFit(naturalWidth > naturalHeight ? "contain" : "cover");
+    setImageFit(naturalWidth > naturalHeight ? "contain" : "cover");
   }, []);
+
+  const renderQRCode = () => (
+    <div className="flex items-center gap-2">
+      <div className="p-1.5 rounded-lg" style={{ background: "white" }}>
+        <QRCodeSVG value={product.link} size={48} level="M" />
+      </div>
+      <p className="text-[9px] font-medium" style={{ color: "hsl(0,0%,80%)" }}>Escaneie para comprar</p>
+    </div>
+  );
 
   const renderTemplate = () => {
     switch (platform) {
-      // Instagram Post: imagem grande, preço + título mínimo
+      // Instagram Post: imagem + título + QR Code
       case "instagram-post":
         return (
-          <div className="w-[320px] aspect-square rounded-2xl overflow-hidden relative shadow-2xl shadow-primary/10">
-            <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" crossOrigin="anonymous" />
+          <div className="w-[320px] aspect-square rounded-2xl overflow-hidden relative">
+            <img
+              src={product.imageUrl}
+              alt={product.name}
+              className={`absolute inset-0 w-full h-full ${imageFit === "contain" ? "object-contain" : "object-cover"}`}
+              crossOrigin="anonymous"
+              onLoad={handleImageLoad}
+            />
             <div className="absolute inset-0 bg-gradient-to-t from-[hsl(240,10%,4%,0.7)] via-transparent to-transparent" />
-            <div className="absolute bottom-0 left-0 right-0 p-5">
+            <div className="absolute bottom-0 left-0 right-0 p-4 space-y-2">
               <p className={`text-xs font-semibold leading-tight ${editableClass}`} style={{ color: "hsl(0,0%,90%)" }} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditTitle(e.currentTarget.textContent || "")}>
                 {title.substring(0, 60)}
               </p>
-              {isAmazon && (
-                <p className="text-[10px] mt-1.5 font-medium" style={{ color: "hsl(160,84%,39%)" }}>🔗 Para saber mais, link na bio</p>
-              )}
+              {renderQRCode()}
             </div>
           </div>
         );
 
-      // Instagram Feed: FOCO EM IMAGEM — sem selo, sem CTA, imagem limpa
-      case "instagram-feed":
-        return (
-          <div className="w-[320px] aspect-square rounded-2xl overflow-hidden relative shadow-2xl shadow-primary/10">
-            <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" crossOrigin="anonymous" />
-            <div className="absolute inset-0 bg-gradient-to-t from-[hsl(240,10%,4%,0.5)] via-transparent to-transparent" />
-            <div className="absolute bottom-0 left-0 right-0 p-5">
-              <p className={`text-sm font-bold leading-tight ${editableClass}`} style={{ color: "hsl(0,0%,95%)" }} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditTitle(e.currentTarget.textContent || "")}>
-                {title.substring(0, 50)}
-              </p>
-              {isAmazon && (
-                <p className="text-[10px] mt-1.5 font-medium" style={{ color: "hsl(160,84%,39%)" }}>🔗 Para saber mais, link na bio</p>
-              )}
-            </div>
-          </div>
-        );
-
-      // Instagram Stories: imagem inteira completa, sem CTA swipe up
+      // Instagram Stories: imagem limpa proporcional + QR Code no fundo
       case "instagram-stories":
         return (
           <div className="w-[240px] aspect-[9/16] rounded-2xl overflow-hidden relative bg-muted">
             <img
               src={product.imageUrl}
               alt={product.name}
-              className={`absolute inset-0 w-full h-full ${verticalImageFit === "contain" ? "object-contain p-2" : "object-cover"}`}
+              className={`absolute inset-0 w-full h-full ${imageFit === "contain" ? "object-contain" : "object-cover"}`}
               crossOrigin="anonymous"
-              onLoad={handleVerticalImageLoad}
+              onLoad={handleImageLoad}
             />
-            <div className="absolute inset-x-4 bottom-4 px-2 py-1">
-              <p
-                className={`text-center text-sm font-semibold text-foreground ${editableClass}`}
-                contentEditable={isEditing}
-                suppressContentEditableWarning
-                onBlur={(e) => isEditing && setEditCta(e.currentTarget.textContent || "")}
-              >
-                {ctaText}
-              </p>
+            <div className="absolute inset-0 bg-gradient-to-t from-[hsl(240,10%,4%,0.6)] via-transparent to-transparent" />
+            <div className="absolute bottom-3 left-3 right-3">
+              {renderQRCode()}
             </div>
           </div>
         );
 
-      // WhatsApp Status: imagem inteira + título forte + QR Code
+      // WhatsApp Status: imagem limpa + título + QR Code, sem etiquetas
       case "whatsapp-status":
         return (
-          <div className="w-[240px] aspect-[9/16] rounded-2xl overflow-hidden relative shadow-2xl">
-            <img src={product.imageUrl} alt={product.name} className="absolute inset-0 w-full h-full object-cover" crossOrigin="anonymous" />
-            <div className="absolute inset-0 bg-gradient-to-t from-[hsl(140,20%,8%,0.95)] via-[hsl(140,20%,8%,0.3)] to-[hsl(140,20%,8%,0.4)]" />
-            <div className="absolute top-4 left-4 right-4 flex justify-between items-start">
-              <span className="px-2 py-1 rounded-md text-[10px] font-bold backdrop-blur-sm" style={{ background: "hsl(160,84%,39%,0.2)", color: "hsl(160,84%,39%)", border: "1px solid hsl(160,84%,39%,0.3)" }}>
-                {isAmazon ? "CONFIRA 👀" : "OFERTA 🔥"}
-              </span>
-            </div>
-            <div className="absolute bottom-0 left-0 right-0 p-5 space-y-3">
-              <p className={`text-lg font-extrabold leading-tight ${editableClass}`} style={{ color: "hsl(0,0%,100%)", textShadow: "0 2px 8px rgba(0,0,0,0.8)" }} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditTitle(e.currentTarget.textContent || "")}>
+          <div className="w-[240px] aspect-[9/16] rounded-2xl overflow-hidden relative">
+            <img
+              src={product.imageUrl}
+              alt={product.name}
+              className={`absolute inset-0 w-full h-full ${imageFit === "contain" ? "object-contain" : "object-cover"}`}
+              crossOrigin="anonymous"
+              onLoad={handleImageLoad}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[hsl(140,20%,8%,0.85)] via-transparent to-transparent" />
+            <div className="absolute bottom-0 left-0 right-0 p-4 space-y-2">
+              <p className={`text-base font-extrabold leading-tight ${editableClass}`} style={{ color: "hsl(0,0%,100%)", textShadow: "0 2px 8px rgba(0,0,0,0.8)" }} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditTitle(e.currentTarget.textContent || "")}>
                 {title}
               </p>
-              <p className={`text-[11px] ${editableClass}`} style={{ color: "hsl(0,0%,80%)" }} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditDescription(e.currentTarget.textContent || "")}>
-                {desc.substring(0, 80)}
-              </p>
-              {/* QR Code do link de afiliado */}
-              <div className="flex items-center gap-3">
-                <div className="p-1.5 rounded-lg" style={{ background: "white" }}>
-                  <QRCodeSVG value={product.link} size={52} level="M" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-[9px] font-medium" style={{ color: "hsl(160,84%,39%)" }}>Escaneie para comprar</p>
-                  <p className="text-[8px]" style={{ color: "hsl(0,0%,60%)" }}>{product.link.substring(0, 30)}...</p>
-                </div>
-              </div>
+              {renderQRCode()}
             </div>
           </div>
         );
