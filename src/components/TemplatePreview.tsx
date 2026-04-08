@@ -152,16 +152,15 @@ const TemplatePreview = ({ product, content: initialContent, onBack }: TemplateP
 
   const renderTemplate = () => {
     switch (platform) {
-      // Instagram Post: imagem + título + QR Code
       case "instagram-post":
         return (
-          <div className="w-[320px] aspect-square rounded-2xl overflow-hidden bg-background">
+          <div className="w-[320px] aspect-square rounded-2xl overflow-hidden" style={{ background: "white" }}>
             <div className="flex h-full flex-col">
               <div className="flex-1 flex items-center justify-center p-3">
                 {renderContainedImage("max-w-full max-h-full object-contain object-center")}
               </div>
-              <div className={`space-y-2 px-4 pb-4 ${shouldOverlayContent ? "-mt-20 pt-16" : "pt-2"}`}>
-                <p className={`text-xs font-semibold leading-tight ${editableClass}`} style={{ color: "hsl(0,0%,90%)" }} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditTitle(e.currentTarget.textContent || "")}>
+              <div className="space-y-2 px-4 pb-4 pt-1">
+                <p className={`text-xs font-semibold leading-tight ${editableClass}`} style={{ color: "hsl(0,0%,20%)" }} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditTitle(e.currentTarget.textContent || "")}>
                   {title.substring(0, 60)}
                 </p>
                 {renderQRCode()}
@@ -170,31 +169,29 @@ const TemplatePreview = ({ product, content: initialContent, onBack }: TemplateP
           </div>
         );
 
-      // Instagram Stories: imagem limpa proporcional + QR Code no fundo
       case "instagram-stories":
         return (
-          <div className="w-[240px] aspect-[9/16] rounded-2xl overflow-hidden bg-background">
+          <div className="w-[240px] aspect-[9/16] rounded-2xl overflow-hidden" style={{ background: "white" }}>
             <div className="flex h-full flex-col">
               <div className="flex-1 flex items-center justify-center p-3">
                 {renderContainedImage("max-w-full max-h-full object-contain object-center")}
               </div>
-              <div className={`px-3 pb-3 ${shouldOverlayContent ? "-mt-20 pt-16" : "pt-2"}`}>
+              <div className="px-3 pb-3 pt-1">
                 {renderQRCode()}
               </div>
             </div>
           </div>
         );
 
-      // WhatsApp Status: imagem limpa + título + QR Code, sem etiquetas
       case "whatsapp-status":
         return (
-          <div className="w-[240px] aspect-[9/16] rounded-2xl overflow-hidden bg-background">
+          <div className="w-[240px] aspect-[9/16] rounded-2xl overflow-hidden" style={{ background: "white" }}>
             <div className="flex h-full flex-col">
               <div className="flex-1 flex items-center justify-center p-3">
                 {renderContainedImage("max-w-full max-h-full object-contain object-center")}
               </div>
-              <div className={`space-y-2 px-4 pb-4 ${shouldOverlayContent ? "-mt-24 pt-20" : "pt-2"}`}>
-                <p className={`text-base font-extrabold leading-tight ${editableClass}`} style={{ color: "hsl(0,0%,100%)", textShadow: "0 2px 8px rgba(0,0,0,0.8)" }} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditTitle(e.currentTarget.textContent || "")}>
+              <div className="space-y-2 px-4 pb-4 pt-1">
+                <p className={`text-base font-extrabold leading-tight ${editableClass}`} style={{ color: "hsl(0,0%,20%)" }} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditTitle(e.currentTarget.textContent || "")}>
                   {title}
                 </p>
                 {renderQRCode()}
