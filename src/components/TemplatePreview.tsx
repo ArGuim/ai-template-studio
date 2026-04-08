@@ -159,10 +159,11 @@ const TemplatePreview = ({ product, content: initialContent, onBack }: TemplateP
               <div className="flex-1 flex items-center justify-center p-3">
                 {renderContainedImage("max-w-full max-h-full object-contain object-center")}
               </div>
-              <div className="space-y-2 px-4 pb-4 pt-1">
-                <p className={`text-xs font-semibold leading-tight ${editableClass}`} style={{ color: "hsl(0,0%,20%)" }} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditTitle(e.currentTarget.textContent || "")}>
+              <div className="space-y-1.5 px-4 pb-4 pt-1">
+                <p className={`text-[11px] font-bold leading-tight ${editableClass}`} style={{ color: "hsl(0,0%,15%)" }} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditTitle(e.currentTarget.textContent || "")}>
                   {title.substring(0, 60)}
                 </p>
+                <p className="text-[9px] leading-snug" style={{ color: "hsl(0,0%,40%)" }}>{product.name}</p>
                 {renderQRCode()}
               </div>
             </div>
