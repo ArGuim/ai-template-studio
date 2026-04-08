@@ -23,6 +23,7 @@ interface GeneratedContent {
 }
 
 type Platform = "instagram-post" | "instagram-stories" | "whatsapp-status";
+type ImageLayout = "landscape" | "square" | "portrait";
 
 interface TemplatePreviewProps {
   product: ProductData;
@@ -41,7 +42,7 @@ const TemplatePreview = ({ product, content: initialContent, onBack }: TemplateP
   const [copied, setCopied] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [imageFit, setImageFit] = useState<"contain" | "cover">("cover");
+  const [imageLayout, setImageLayout] = useState<ImageLayout>("portrait");
   const [content, setContent] = useState<GeneratedContent>(initialContent);
   const [editTitle, setEditTitle] = useState(content.titles[0]);
   const [editDescription, setEditDescription] = useState(content.description);
@@ -53,6 +54,7 @@ const TemplatePreview = ({ product, content: initialContent, onBack }: TemplateP
   const title = isEditing ? editTitle : content.titles[0];
   const ctaText = isAmazon ? "Para saber mais, link na bio" : (isEditing ? editCta : content.cta);
   const editableClass = isEditing ? "outline outline-2 outline-dashed outline-primary/40 rounded px-1 focus:outline-primary" : "";
+  const shouldOverlayContent = imageLayout === "landscape";
 
   const toggleEdit = () => {
     if (isEditing) {
@@ -114,7 +116,19 @@ const TemplatePreview = ({ product, content: initialContent, onBack }: TemplateP
   const handleImageLoad = useCallback((event: React.SyntheticEvent<HTMLImageElement>) => {
     const { naturalWidth, naturalHeight } = event.currentTarget;
     if (!naturalWidth || !naturalHeight) return;
-    setImageFit(naturalWidth > naturalHeight ? "contain" : "cover");
+    const aspectRatio = naturalWidth / naturalHeight;
+
+    if (aspectRatio > 1.05) {
+      setImageLayout("landscape");
+      return;
+    }
+
+    if (aspectRatio < 0.95) {
+      setImageLayout("portrait");
+      return;
+    }
+
+    setImageLayout("square");
   }, []);
 
   const renderQRCode = () => (
@@ -126,25 +140,32 @@ const TemplatePreview = ({ product, content: initialContent, onBack }: TemplateP
     </div>
   );
 
+  const renderContainedImage = (className: string) => (
+    <img
+      src={product.imageUrl}
+      alt={product.name}
+      className={className}
+      crossOrigin="anonymous"
+      onLoad={handleImageLoad}
+    />
+  );
+
   const renderTemplate = () => {
     switch (platform) {
       // Instagram Post: imagem + título + QR Code
       case "instagram-post":
         return (
-          <div className="w-[320px] aspect-square rounded-2xl overflow-hidden relative">
-            <img
-              src={product.imageUrl}
-              alt={product.name}
-              className={`absolute inset-0 w-full h-full ${imageFit === "contain" ? "object-contain" : "object-cover"}`}
-              crossOrigin="anonymous"
-              onLoad={handleImageLoad}
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-[hsl(240,10%,4%,0.7)] via-transparent to-transparent" />
-            <div className="absolute bottom-0 left-0 right-0 p-4 space-y-2">
-              <p className={`text-xs font-semibold leading-tight ${editableClass}`} style={{ color: "hsl(0,0%,90%)" }} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditTitle(e.currentTarget.textContent || "")}>
-                {title.substring(0, 60)}
-              </p>
-              {renderQRCode()}
+          <div className="w-[320px] aspect-square rounded-2xl overflow-hidden bg-background">
+            <div className="flex h-full flex-col">
+              <div className="flex-1 flex items-center justify-center p-3">
+                {renderContainedImage("max-w-full max-h-full object-contain object-center")}
+              </div>
+              <div className={`space-y-2 px-4 pb-4 ${shouldOverlayContent ? "-mt-20 pt-16" : "pt-2"}`}>
+                <p className={`text-xs font-semibold leading-tight ${editableClass}`} style={{ color: "hsl(0,0%,90%)" }} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditTitle(e.currentTarget.textContent || "")}>
+                  {title.substring(0, 60)}
+                </p>
+                {renderQRCode()}
+              </div>
             </div>
           </div>
         );
@@ -152,17 +173,14 @@ const TemplatePreview = ({ product, content: initialContent, onBack }: TemplateP
       // Instagram Stories: imagem limpa proporcional + QR Code no fundo
       case "instagram-stories":
         return (
-          <div className="w-[240px] aspect-[9/16] rounded-2xl overflow-hidden relative bg-muted">
-            <img
-              src={product.imageUrl}
-              alt={product.name}
-              className={`absolute inset-0 w-full h-full ${imageFit === "contain" ? "object-contain" : "object-cover"}`}
-              crossOrigin="anonymous"
-              onLoad={handleImageLoad}
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-[hsl(240,10%,4%,0.6)] via-transparent to-transparent" />
-            <div className="absolute bottom-3 left-3 right-3">
-              {renderQRCode()}
+          <div className="w-[240px] aspect-[9/16] rounded-2xl overflow-hidden bg-background">
+            <div className="flex h-full flex-col">
+              <div className="flex-1 flex items-center justify-center p-3">
+                {renderContainedImage("max-w-full max-h-full object-contain object-center")}
+              </div>
+              <div className={`px-3 pb-3 ${shouldOverlayContent ? "-mt-20 pt-16" : "pt-2"}`}>
+                {renderQRCode()}
+              </div>
             </div>
           </div>
         );
@@ -170,20 +188,17 @@ const TemplatePreview = ({ product, content: initialContent, onBack }: TemplateP
       // WhatsApp Status: imagem limpa + título + QR Code, sem etiquetas
       case "whatsapp-status":
         return (
-          <div className="w-[240px] aspect-[9/16] rounded-2xl overflow-hidden relative">
-            <img
-              src={product.imageUrl}
-              alt={product.name}
-              className={`absolute inset-0 w-full h-full ${imageFit === "contain" ? "object-contain" : "object-cover"}`}
-              crossOrigin="anonymous"
-              onLoad={handleImageLoad}
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-[hsl(140,20%,8%,0.85)] via-transparent to-transparent" />
-            <div className="absolute bottom-0 left-0 right-0 p-4 space-y-2">
-              <p className={`text-base font-extrabold leading-tight ${editableClass}`} style={{ color: "hsl(0,0%,100%)", textShadow: "0 2px 8px rgba(0,0,0,0.8)" }} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditTitle(e.currentTarget.textContent || "")}>
-                {title}
-              </p>
-              {renderQRCode()}
+          <div className="w-[240px] aspect-[9/16] rounded-2xl overflow-hidden bg-background">
+            <div className="flex h-full flex-col">
+              <div className="flex-1 flex items-center justify-center p-3">
+                {renderContainedImage("max-w-full max-h-full object-contain object-center")}
+              </div>
+              <div className={`space-y-2 px-4 pb-4 ${shouldOverlayContent ? "-mt-24 pt-20" : "pt-2"}`}>
+                <p className={`text-base font-extrabold leading-tight ${editableClass}`} style={{ color: "hsl(0,0%,100%)", textShadow: "0 2px 8px rgba(0,0,0,0.8)" }} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditTitle(e.currentTarget.textContent || "")}>
+                  {title}
+                </p>
+                {renderQRCode()}
+              </div>
             </div>
           </div>
         );
