@@ -136,7 +136,7 @@ const TemplatePreview = ({ product, content: initialContent, onBack }: TemplateP
       <div className="p-1.5 rounded-lg" style={{ background: "white" }}>
         <QRCodeSVG value={product.link} size={48} level="M" />
       </div>
-      <p className="text-[9px] font-medium" style={{ color: "hsl(0,0%,80%)" }}>Escaneie para comprar</p>
+      <p className="text-[9px] font-medium" style={{ color: "hsl(0,0%,30%)" }}>Escaneie para comprar</p>
     </div>
   );
 
