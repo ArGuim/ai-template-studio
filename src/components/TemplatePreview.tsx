@@ -51,6 +51,7 @@ const TemplatePreview = ({ product, content: initialContent, onBack }: TemplateP
   const { toast } = useToast();
 
   const isAmazon = /amazon\.|amzn\./i.test(product.link);
+  const showPrice = !isAmazon && product.price;
   const title = isEditing ? editTitle : content.titles[0];
   const ctaText = isAmazon ? "Para saber mais, link na bio" : (isEditing ? editCta : content.cta);
   const editableClass = isEditing ? "outline outline-2 outline-dashed outline-primary/40 rounded px-1 focus:outline-primary" : "";
@@ -154,16 +155,19 @@ const TemplatePreview = ({ product, content: initialContent, onBack }: TemplateP
     switch (platform) {
       case "instagram-post":
         return (
-          <div className="w-[320px] aspect-square rounded-2xl overflow-hidden" style={{ background: "white" }}>
-            <div className="flex h-full flex-col">
-              <div className="flex-1 flex items-center justify-center p-3">
-                {renderContainedImage("max-w-full max-h-full object-contain object-center")}
+          <div className="w-[320px] rounded-2xl overflow-hidden" style={{ background: "white" }}>
+            <div className="flex flex-col">
+              <div className="flex items-center justify-center p-3" style={{ maxHeight: "240px" }}>
+                {renderContainedImage("max-w-full max-h-[220px] object-contain object-center")}
               </div>
-              <div className="space-y-1.5 px-4 pb-4 pt-1">
+              <div className="space-y-1 px-4 pb-3 pt-1">
                 <p className={`text-[11px] font-bold leading-tight ${editableClass}`} style={{ color: "hsl(0,0%,15%)" }} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditTitle(e.currentTarget.textContent || "")}>
                   {title.substring(0, 60)}
                 </p>
                 <p className="text-[9px] leading-snug" style={{ color: "hsl(0,0%,40%)" }}>{product.name}</p>
+                {showPrice && (
+                  <p className="text-[11px] font-bold" style={{ color: "hsl(142,70%,35%)" }}>{product.price}</p>
+                )}
                 {renderQRCode()}
               </div>
             </div>
@@ -179,6 +183,9 @@ const TemplatePreview = ({ product, content: initialContent, onBack }: TemplateP
               </div>
               <div className="space-y-1.5 px-3 pb-3 pt-1">
                 <p className="text-[10px] font-bold leading-tight" style={{ color: "hsl(0,0%,15%)" }}>{product.name}</p>
+                {showPrice && (
+                  <p className="text-[10px] font-bold" style={{ color: "hsl(142,70%,35%)" }}>{product.price}</p>
+                )}
                 <p className={`text-[9px] font-semibold leading-tight ${editableClass}`} style={{ color: "hsl(0,0%,30%)" }} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditCta(e.currentTarget.textContent || "")}>
                   {ctaText}
                 </p>
@@ -197,6 +204,9 @@ const TemplatePreview = ({ product, content: initialContent, onBack }: TemplateP
               </div>
               <div className="space-y-1.5 px-3 pb-3 pt-1">
                 <p className="text-[10px] font-bold leading-tight" style={{ color: "hsl(0,0%,15%)" }}>{product.name}</p>
+                {showPrice && (
+                  <p className="text-[10px] font-bold" style={{ color: "hsl(142,70%,35%)" }}>{product.price}</p>
+                )}
                 <p className={`text-[9px] font-semibold leading-tight ${editableClass}`} style={{ color: "hsl(0,0%,30%)" }} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditCta(e.currentTarget.textContent || "")}>
                   {ctaText}
                 </p>
