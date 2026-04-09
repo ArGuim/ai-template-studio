@@ -177,7 +177,11 @@ const TemplatePreview = ({ product, content: initialContent, onBack }: TemplateP
               <div className="flex-1 flex items-center justify-center p-3">
                 {renderContainedImage("max-w-full max-h-full object-contain object-center")}
               </div>
-              <div className="px-3 pb-3 pt-1">
+              <div className="space-y-1.5 px-3 pb-3 pt-1">
+                <p className="text-[10px] font-bold leading-tight" style={{ color: "hsl(0,0%,15%)" }}>{product.name}</p>
+                <p className={`text-[9px] font-semibold leading-tight ${editableClass}`} style={{ color: "hsl(0,0%,30%)" }} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditCta(e.currentTarget.textContent || "")}>
+                  {ctaText}
+                </p>
                 {renderQRCode()}
               </div>
             </div>
@@ -191,9 +195,10 @@ const TemplatePreview = ({ product, content: initialContent, onBack }: TemplateP
               <div className="flex-1 flex items-center justify-center p-3">
                 {renderContainedImage("max-w-full max-h-full object-contain object-center")}
               </div>
-              <div className="space-y-2 px-4 pb-4 pt-1">
-                <p className={`text-base font-extrabold leading-tight ${editableClass}`} style={{ color: "hsl(0,0%,20%)" }} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditTitle(e.currentTarget.textContent || "")}>
-                  {title}
+              <div className="space-y-1.5 px-3 pb-3 pt-1">
+                <p className="text-[10px] font-bold leading-tight" style={{ color: "hsl(0,0%,15%)" }}>{product.name}</p>
+                <p className={`text-[9px] font-semibold leading-tight ${editableClass}`} style={{ color: "hsl(0,0%,30%)" }} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditCta(e.currentTarget.textContent || "")}>
+                  {ctaText}
                 </p>
                 {renderQRCode()}
               </div>
