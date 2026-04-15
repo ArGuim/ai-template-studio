@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Settings, Save, Check, Eye, EyeOff, Info } from "lucide-react";
+import { Settings, Save, Check, Eye, EyeOff, Info, AlertCircle } from "lucide-react";
 
 interface ApiConfig {
   amazonTag?: string;
