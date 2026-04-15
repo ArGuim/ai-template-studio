@@ -167,7 +167,12 @@ const TemplatePreview = ({ product, content: initialContent, onBack }: TemplateP
                 </p>
                 <p className="text-[9px] leading-snug" style={{ color: "hsl(0,0%,40%)" }}>{product.name}</p>
                 {showPrice && (
-                  <p className="text-[11px] font-bold" style={{ color: "hsl(142,70%,35%)" }}>{product.price}</p>
+                  <div className="flex items-center gap-1.5">
+                    {product.originalPrice && (
+                      <p className="text-[9px] line-through" style={{ color: "hsl(0,0%,55%)" }}>{product.originalPrice}</p>
+                    )}
+                    <p className="text-[11px] font-bold" style={{ color: "hsl(142,70%,35%)" }}>{product.price}</p>
+                  </div>
                 )}
                 {renderQRCode()}
               </div>
@@ -185,7 +190,12 @@ const TemplatePreview = ({ product, content: initialContent, onBack }: TemplateP
               <div className="space-y-1.5 px-3 pb-3 pt-1">
                 <p className="text-[10px] font-bold leading-tight" style={{ color: "hsl(0,0%,15%)" }}>{product.name}</p>
                 {showPrice && (
-                  <p className="text-[10px] font-bold" style={{ color: "hsl(142,70%,35%)" }}>{product.price}</p>
+                  <div className="flex items-center gap-1.5">
+                    {product.originalPrice && (
+                      <p className="text-[8px] line-through" style={{ color: "hsl(0,0%,55%)" }}>{product.originalPrice}</p>
+                    )}
+                    <p className="text-[10px] font-bold" style={{ color: "hsl(142,70%,35%)" }}>{product.price}</p>
+                  </div>
                 )}
                 <p className={`text-[9px] font-semibold leading-tight ${editableClass}`} style={{ color: "hsl(0,0%,30%)" }} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditCta(e.currentTarget.textContent || "")}>
                   {ctaText}
@@ -206,7 +216,12 @@ const TemplatePreview = ({ product, content: initialContent, onBack }: TemplateP
               <div className="space-y-1.5 px-3 pb-3 pt-1">
                 <p className="text-[10px] font-bold leading-tight" style={{ color: "hsl(0,0%,15%)" }}>{product.name}</p>
                 {showPrice && (
-                  <p className="text-[10px] font-bold" style={{ color: "hsl(142,70%,35%)" }}>{product.price}</p>
+                  <div className="flex items-center gap-1.5">
+                    {product.originalPrice && (
+                      <p className="text-[8px] line-through" style={{ color: "hsl(0,0%,55%)" }}>{product.originalPrice}</p>
+                    )}
+                    <p className="text-[10px] font-bold" style={{ color: "hsl(142,70%,35%)" }}>{product.price}</p>
+                  </div>
                 )}
                 <p className={`text-[9px] font-semibold leading-tight ${editableClass}`} style={{ color: "hsl(0,0%,30%)" }} contentEditable={isEditing} suppressContentEditableWarning onBlur={(e) => isEditing && setEditCta(e.currentTarget.textContent || "")}>
                   {ctaText}
