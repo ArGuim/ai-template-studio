@@ -12,7 +12,7 @@ interface ProductData {
   link: string;
 }
 
-export type ToneOfVoice = "urgente" | "casual" | "profissional" | "divertido" | "luxo" | "informativo" | "emocional" | "tecnico";
+export type ToneOfVoice = "urgente" | "casual" | "profissional" | "divertido" | "luxo" | "informativo";
 
 interface GeneratedContent {
   titles: string[];
