@@ -53,7 +53,18 @@ const ProductInput = ({ onProductReady }: ProductInputProps) => {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        let functionMessage = "Não foi possível extrair os dados. Preencha manualmente.";
+
+        if ("context" in error && error.context instanceof Response) {
+          const errorBody = await error.context.json().catch(() => null);
+          if (errorBody?.error) {
+            functionMessage = errorBody.error;
+          }
+        }
+
+        throw new Error(functionMessage);
+      }
 
       if (data?.error) {
         setExtractError(data.error);
@@ -76,11 +87,12 @@ const ProductInput = ({ onProductReady }: ProductInputProps) => {
       }
     } catch (err) {
       console.error("Extract error:", err);
-      setExtractError("Não foi possível extrair os dados. Preencha manualmente.");
+      const message = err instanceof Error ? err.message : "Não foi possível extrair os dados. Preencha manualmente.";
+      setExtractError(message);
       setShowManual(true);
       toast({
         title: "Erro na extração",
-        description: "Tente novamente ou preencha manualmente.",
+        description: message,
         variant: "destructive",
       });
     } finally {
