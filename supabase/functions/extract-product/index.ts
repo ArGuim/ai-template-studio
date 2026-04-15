@@ -329,6 +329,7 @@ serve(async (req) => {
         product: {
           name: product.name || metadata.title || '',
           price: product.price || '',
+          originalPrice: product.originalPrice || '',
           description: product.description || metadata.description || '',
           imageUrl: product.imageUrl || '',
           link: formattedUrl,
