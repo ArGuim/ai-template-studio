@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 interface ProductData {
   name: string;
   price: string;
+  originalPrice?: string;
   description: string;
   imageUrl: string;
   link: string;
@@ -51,6 +52,7 @@ const ContentGenerator = ({ product, onContentReady }: ContentGeneratorProps) =>
         body: {
           productName: product.name,
           productPrice: product.price,
+          productOriginalPrice: product.originalPrice,
           productDescription: product.description,
           productLink: product.link,
           tone,

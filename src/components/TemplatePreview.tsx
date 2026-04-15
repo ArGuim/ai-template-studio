@@ -9,6 +9,7 @@ import { QRCodeSVG } from "qrcode.react";
 interface ProductData {
   name: string;
   price: string;
+  originalPrice?: string;
   description: string;
   imageUrl: string;
   link: string;
