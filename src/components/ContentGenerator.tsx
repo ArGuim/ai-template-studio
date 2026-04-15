@@ -110,7 +110,12 @@ const ContentGenerator = ({ product, onContentReady }: ContentGeneratorProps) =>
         />
         <div className="flex-1 min-w-0">
           <h3 className="font-display font-semibold truncate">{product.name}</h3>
-          <p className="text-success font-bold font-mono text-lg">{product.price}</p>
+          <div className="flex items-center gap-2">
+            {product.originalPrice && (
+              <p className="text-muted-foreground line-through text-sm font-mono">{product.originalPrice}</p>
+            )}
+            <p className="text-success font-bold font-mono text-lg">{product.price}</p>
+          </div>
         </div>
       </div>
 
