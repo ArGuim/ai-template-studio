@@ -68,6 +68,7 @@ const ProductInput = ({ onProductReady }: ProductInputProps) => {
         onProductReady({
           name: product.name,
           price: product.price,
+          originalPrice: product.originalPrice || "",
           description: product.description,
           imageUrl: product.imageUrl || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop",
           link: product.link || link.trim(),
