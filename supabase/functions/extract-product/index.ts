@@ -23,6 +23,34 @@ function isLoginOrBlockedPage(markdown: string, title: string): boolean {
   return blockedPatterns.some(p => p.test(combined));
 }
 
+function decodeInlineJsString(value: string): string {
+  try {
+    return JSON.parse(`"${value.replace(/"/g, '\\"')}"`);
+  } catch {
+    return value
+      .replace(/\\u0026/gi, '&')
+      .replace(/\\\//g, '/');
+  }
+}
+
+function extractShopeeRedirectUrl(html: string): string | null {
+  const httpUrlMatch = html.match(/httpUrl\s*:\s*"([^"]+)"/i);
+  if (httpUrlMatch?.[1]) {
+    return decodeInlineJsString(httpUrlMatch[1]);
+  }
+
+  const deepLinkMatch = html.match(/deepLinkUrl\s*:\s*"([^"]+)"/i);
+  if (deepLinkMatch?.[1]) {
+    const deepLink = decodeInlineJsString(deepLinkMatch[1]);
+    const navigateUrlMatch = deepLink.match(/[?&]navigate_url=([^&]+)/i);
+    if (navigateUrlMatch?.[1]) {
+      return decodeURIComponent(navigateUrlMatch[1]);
+    }
+  }
+
+  return null;
+}
+
 async function resolveShortUrl(url: string): Promise<string> {
   for (const method of ['HEAD', 'GET']) {
     try {
@@ -38,6 +66,16 @@ async function resolveShortUrl(url: string): Promise<string> {
       if (finalUrl && finalUrl !== url) {
         console.log('Resolved short URL:', url, '->', finalUrl);
         return finalUrl;
+      }
+
+      if (method === 'GET') {
+        const html = await resp.text();
+        const extractedUrl = extractShopeeRedirectUrl(html);
+
+        if (extractedUrl && extractedUrl !== url) {
+          console.log('Resolved Shopee transfer page URL:', url, '->', extractedUrl);
+          return extractedUrl;
+        }
       }
     } catch (e) {
       console.log(`Could not resolve short URL with ${method}:`, e);
@@ -301,7 +339,25 @@ serve(async (req) => {
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
+
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: normalizedShopeeAppId && normalizedShopeeAppSecret
+              ? 'Não foi possível consultar a Shopee pela API oficial. Verifique suas credenciais ou tente o link completo do produto.'
+              : 'Para extrair produtos da Shopee, configure seu App ID e App Secret em APIs de Lojas.',
+          }),
+          { status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
+
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Não consegui identificar o produto da Shopee pelo link. Use o link completo do produto.',
+        }),
+        { status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     // Scrape with Firecrawl (longer wait for Shopee)
