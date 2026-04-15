@@ -195,13 +195,36 @@ serve(async (req) => {
   }
 
   try {
-    const { url, shopeeAppId, shopeeAppSecret } = await req.json();
+    let body: Record<string, unknown>;
+    try {
+      body = await req.json();
+    } catch {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Corpo da requisição inválido' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const { url, shopeeAppId, shopeeAppSecret } = body as { url?: string; shopeeAppId?: string; shopeeAppSecret?: string };
     const normalizedShopeeAppId = typeof shopeeAppId === 'string' ? shopeeAppId.trim() : '';
     const normalizedShopeeAppSecret = typeof shopeeAppSecret === 'string' ? shopeeAppSecret.trim() : '';
 
-    if (!url || typeof url !== 'string') {
+    if (!url || typeof url !== 'string' || url.trim().length === 0 || url.trim().length > 2048) {
       return new Response(
-        JSON.stringify({ success: false, error: 'URL é obrigatória' }),
+        JSON.stringify({ success: false, error: 'URL é obrigatória e deve ter no máximo 2048 caracteres' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Validate URL format
+    try {
+      const parsed = new URL(url.trim().startsWith('http') ? url.trim() : `https://${url.trim()}`);
+      if (!['http:', 'https:'].includes(parsed.protocol)) {
+        throw new Error('Invalid protocol');
+      }
+    } catch {
+      return new Response(
+        JSON.stringify({ success: false, error: 'URL inválida' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }

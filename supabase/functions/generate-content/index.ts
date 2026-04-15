@@ -5,13 +5,44 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
+const VALID_TONES = ['urgente', 'casual', 'profissional', 'divertido', 'luxo', 'informativo'];
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { productName, productPrice, productOriginalPrice, productDescription, tone, productLink } = await req.json();
+    let body: Record<string, unknown>;
+    try {
+      body = await req.json();
+    } catch {
+      return new Response(JSON.stringify({ error: 'Corpo da requisição inválido' }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const { productName, productPrice, productOriginalPrice, productDescription, tone, productLink } = body as {
+      productName?: string; productPrice?: string; productOriginalPrice?: string;
+      productDescription?: string; tone?: string; productLink?: string;
+    };
+
+    // Input validation
+    if (!productName || typeof productName !== 'string' || productName.trim().length === 0 || productName.length > 500) {
+      return new Response(JSON.stringify({ error: 'Nome do produto é obrigatório (máx 500 caracteres)' }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    if (tone && !VALID_TONES.includes(tone)) {
+      return new Response(JSON.stringify({ error: `Tom inválido. Use: ${VALID_TONES.join(', ')}` }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    if (productPrice && (typeof productPrice !== 'string' || productPrice.length > 50)) {
+      return new Response(JSON.stringify({ error: 'Preço inválido' }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
