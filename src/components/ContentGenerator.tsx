@@ -28,14 +28,12 @@ interface ContentGeneratorProps {
 }
 
 const toneOptions: { value: ToneOfVoice; label: string; emoji: string; desc: string }[] = [
-  { value: "urgente", label: "Urgente", emoji: "🔥", desc: "Escassez e pressa" },
+  { value: "urgente", label: "Promoção Relâmpago", emoji: "⚡", desc: "Oferta imperdível" },
   { value: "casual", label: "Casual", emoji: "😊", desc: "Amigável e leve" },
   { value: "profissional", label: "Profissional", emoji: "💼", desc: "Formal e analítico" },
   { value: "divertido", label: "Divertido", emoji: "🎉", desc: "Humor e memes" },
   { value: "luxo", label: "Luxo", emoji: "✨", desc: "Premium e exclusivo" },
   { value: "informativo", label: "Informativo", emoji: "📚", desc: "Educativo e detalhado" },
-  { value: "emocional", label: "Emocional", emoji: "💖", desc: "Storytelling e conexão" },
-  { value: "tecnico", label: "Técnico", emoji: "⚙️", desc: "Specs e comparações" },
 ];
 
 const ContentGenerator = ({ product, onContentReady }: ContentGeneratorProps) => {
