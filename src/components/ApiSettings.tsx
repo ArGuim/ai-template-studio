@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Settings, Save, Check, Eye, EyeOff, Info } from "lucide-react";
+import { Settings, Save, Check, Eye, EyeOff, Info, AlertCircle } from "lucide-react";
 
 interface ApiConfig {
   amazonTag?: string;
@@ -71,6 +71,11 @@ const ApiSettings = () => {
       <div className="flex items-start gap-2 p-3 rounded-lg bg-primary/5 border border-primary/10 text-xs text-muted-foreground">
         <Info className="w-4 h-4 mt-0.5 shrink-0 text-primary" />
         <span>Opcional: Configure suas APIs de afiliados para melhorar a extração de dados e gerar links otimizados automaticamente.</span>
+      </div>
+
+      <div className="flex items-start gap-2 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20 text-xs text-muted-foreground">
+        <AlertCircle className="w-4 h-4 mt-0.5 shrink-0 text-yellow-500" />
+        <span>⚠️ Estas credenciais são armazenadas localmente no seu navegador. Use chaves de API com permissões restritas (somente leitura) sempre que possível.</span>
       </div>
 
       <div className="space-y-3">
