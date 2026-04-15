@@ -12,6 +12,7 @@ type Step = "input" | "content" | "template";
 interface ProductData {
   name: string;
   price: string;
+  originalPrice?: string;
   description: string;
   imageUrl: string;
   link: string;

@@ -329,6 +329,7 @@ serve(async (req) => {
         product: {
           name: product.name || metadata.title || '',
           price: product.price || '',
+          originalPrice: product.originalPrice || '',
           description: product.description || metadata.description || '',
           imageUrl: product.imageUrl || '',
           link: formattedUrl,
@@ -362,13 +363,15 @@ async function callAI(apiKey: string, url: string, markdown: string, metadata: R
 Responda APENAS com JSON válido, sem markdown, sem explicação:
 {
   "name": "nome do produto",
-  "price": "preço com moeda (ex: R$ 89,90)",
+  "price": "preço atual/promocional com moeda (ex: R$ 89,90)",
+  "originalPrice": "preço original/antigo com moeda, se houver desconto (ex: R$ 129,90). Se não houver preço antigo, use string vazia",
   "description": "descrição curta do produto (máx 150 caracteres)",
   "imageUrl": "URL da imagem principal do produto (se encontrada no conteúdo)"
 }
 
 Se não encontrar algum campo, use string vazia "".
-IMPORTANTE: Tente sempre encontrar a URL da imagem do produto. Procure por URLs de imagem nos formatos: ![](url), src="url", og:image, etc.`
+IMPORTANTE: Tente sempre encontrar a URL da imagem do produto. Procure por URLs de imagem nos formatos: ![](url), src="url", og:image, etc.
+IMPORTANTE: Se a página mostrar preço com desconto (de/por, preço riscado, etc), extraia o preço original em "originalPrice" e o preço atual em "price".`
         },
         {
           role: "user",
@@ -390,11 +393,12 @@ ${markdown.slice(0, 4000)}`
               type: "object",
               properties: {
                 name: { type: "string", description: "Product name" },
-                price: { type: "string", description: "Product price with currency" },
+                price: { type: "string", description: "Current/promotional price with currency" },
+                originalPrice: { type: "string", description: "Original price before discount, empty string if no discount" },
                 description: { type: "string", description: "Short product description" },
                 imageUrl: { type: "string", description: "Main product image URL" },
               },
-              required: ["name", "price", "description", "imageUrl"],
+              required: ["name", "price", "originalPrice", "description", "imageUrl"],
               additionalProperties: false,
             },
           },

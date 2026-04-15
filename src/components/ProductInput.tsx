@@ -9,6 +9,7 @@ import { getApiConfig } from "@/components/ApiSettings";
 interface ProductData {
   name: string;
   price: string;
+  originalPrice?: string;
   description: string;
   imageUrl: string;
   link: string;
@@ -26,6 +27,7 @@ const ProductInput = ({ onProductReady }: ProductInputProps) => {
   const [manual, setManual] = useState<ProductData>({
     name: "",
     price: "",
+    originalPrice: "",
     description: "",
     imageUrl: "",
     link: "",
@@ -66,6 +68,7 @@ const ProductInput = ({ onProductReady }: ProductInputProps) => {
         onProductReady({
           name: product.name,
           price: product.price,
+          originalPrice: product.originalPrice || "",
           description: product.description,
           imageUrl: product.imageUrl || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop",
           link: product.link || link.trim(),
@@ -179,7 +182,8 @@ const ProductInput = ({ onProductReady }: ProductInputProps) => {
           <div className="space-y-3">
             {[
               { icon: Package, value: manual.name, key: "name" as const, placeholder: "Nome do produto" },
-              { icon: DollarSign, value: manual.price, key: "price" as const, placeholder: "Preço (ex: R$ 89,90)" },
+              { icon: DollarSign, value: manual.originalPrice || "", key: "originalPrice" as const, placeholder: "Preço original / antigo (opcional)" },
+              { icon: DollarSign, value: manual.price, key: "price" as const, placeholder: "Preço promocional (ex: R$ 89,90)" },
               { icon: FileText, value: manual.description, key: "description" as const, placeholder: "Descrição curta" },
               { icon: ImageIcon, value: manual.imageUrl, key: "imageUrl" as const, placeholder: "URL da imagem (opcional)" },
               { icon: Link2, value: manual.link, key: "link" as const, placeholder: "Link de afiliado" },

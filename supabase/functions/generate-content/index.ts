@@ -11,7 +11,7 @@ serve(async (req) => {
   }
 
   try {
-    const { productName, productPrice, productDescription, tone, productLink } = await req.json();
+    const { productName, productPrice, productOriginalPrice, productDescription, tone, productLink } = await req.json();
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
@@ -19,14 +19,12 @@ serve(async (req) => {
     }
 
     const toneInstructions: Record<string, string> = {
-      urgente: "Use um tom URGENTE, com palavras como 'CORRE', 'ÚLTIMAS UNIDADES', 'NÃO PERCA'. Use emojis de fogo e raio. Crie senso de escassez.",
-      casual: "Use um tom casual e amigável, como se estivesse indicando para um amigo. Use emojis fofos e linguagem informal.",
+      urgente: "Use um tom de PROMOÇÃO RELÂMPAGO. Palavras como 'OFERTA IMPERDÍVEL', 'PREÇO BAIXOU', 'APROVEITE AGORA', 'DESCONTO INCRÍVEL'. Use emojis ⚡🔥💥. Destaque o desconto e a economia. Crie urgência de compra imediata.",
+      casual: "Use um tom casual, amigável e convincente, como se estivesse recomendando para um amigo próximo. Seja natural, use emojis fofos e linguagem informal. Foque em por que o produto vale a pena e como ele melhora o dia a dia. Faça o leitor sentir que está recebendo uma dica valiosa de alguém de confiança.",
       profissional: "Use um tom profissional e analítico. Foque em custo-benefício, qualidade e dados objetivos. Seja formal mas acessível.",
       divertido: "Use um tom divertido e humorístico. Faça piadas, use memes e referências populares. Seja irreverente e engraçado.",
       luxo: "Use um tom PREMIUM e EXCLUSIVO. Palavras como 'sofisticado', 'exclusivo', 'selecionado'. Transmita elegância, qualidade superior e status. Use emojis dourados ✨💎👑.",
       informativo: "Use um tom EDUCATIVO e DETALHADO. Explique benefícios, funcionalidades e diferenciais. Use dados, comparações e fatos. Seja didático e informativo. Use emojis de livro 📖📊.",
-      emocional: "Use um tom EMOCIONAL e de STORYTELLING. Conecte o produto a sentimentos, memórias e experiências. Crie uma narrativa envolvente. Use emojis de coração 💖🥺✨.",
-      tecnico: "Use um tom TÉCNICO e de ESPECIFICAÇÕES. Liste specs, compare com concorrentes, destaque dados técnicos. Seja preciso e objetivo. Use emojis de engrenagem ⚙️📐🔧.",
     };
 
     const isAmazon = productLink && /amazon\.|amzn\./i.test(productLink);
@@ -50,11 +48,12 @@ Gere o conteúdo no seguinte formato JSON:
   "caption": "legenda completa para post com quebras de linha"
 }`;
 
+    const priceInfo = isAmazon ? '' : `Preço promocional: ${productPrice}\n${productOriginalPrice ? `Preço original (de): ${productOriginalPrice}\n` : ''}`;
     const userPrompt = `Produto: ${productName}
-${isAmazon ? '' : `Preço: ${productPrice}\n`}${productDescription ? `Descrição: ${productDescription}` : ''}
+${priceInfo}${productDescription ? `Descrição: ${productDescription}` : ''}
 Tom de voz: ${tone}
 
-Gere conteúdo persuasivo para divulgação deste produto nas redes sociais.${isAmazon ? ' Lembre-se: NÃO mencione preços, descontos ou estoque. Use "link na bio" como direcionamento.' : ''}`;
+Gere conteúdo persuasivo para divulgação deste produto nas redes sociais.${isAmazon ? ' Lembre-se: NÃO mencione preços, descontos ou estoque. Use "link na bio" como direcionamento.' : ''}${productOriginalPrice && !isAmazon ? ` Destaque a economia: de ${productOriginalPrice} por ${productPrice}.` : ''}`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
