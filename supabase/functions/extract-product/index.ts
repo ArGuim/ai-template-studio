@@ -246,10 +246,10 @@ async function tryShopeeAffiliateApi(shopId: string, itemId: string, appId: stri
         const item = nodes.find((node: any) => String(node.itemId) === itemId && String(node.shopId) === shopId) || nodes[0];
         if (item) {
           const name = item.productName || '';
-          const priceNumber = Number(item.priceMin || item.priceMax || 0);
-          const price = priceNumber > 0 ? `R$ ${(priceNumber / 100000).toFixed(2).replace('.', ',')}` : '';
-          const originalPriceNumber = Number(item.originalPrice || 0);
-          const originalPrice = originalPriceNumber > 0 && originalPriceNumber > priceNumber ? `R$ ${(originalPriceNumber / 100000).toFixed(2).replace('.', ',')}` : '';
+          const priceMin = Number(item.priceMin || 0);
+          const priceMax = Number(item.priceMax || 0);
+          const price = priceMin > 0 ? `R$ ${(priceMin / 100000).toFixed(2).replace('.', ',')}` : '';
+          const originalPrice = priceMax > priceMin && priceMin > 0 ? `R$ ${(priceMax / 100000).toFixed(2).replace('.', ',')}` : '';
           const imageUrl = item.imageUrl || '';
           const link = item.offerLink || item.productLink || '';
 
