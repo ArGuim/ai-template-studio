@@ -185,10 +185,10 @@ async function tryShopeeAffiliateApi(shopId: string, itemId: string, appId: stri
   try {
     const timestamp = Math.floor(Date.now() / 1000).toString();
     const payload = JSON.stringify({
-      operationName: 'ProductByIds',
+      operationName: 'ProductOfferV2',
       query: compactWhitespace(`
-        query ProductByIds($itemId: Int64, $shopId: Int64, $page: Int!, $limit: Int!) {
-          productOfferV2(itemId: $itemId, shopId: $shopId, page: $page, limit: $limit) {
+        query ProductOfferV2($itemId: Int64!, $shopId: Int64!) {
+          productOfferV2(itemId: $itemId, shopId: $shopId, page: 1, limit: 5) {
             nodes {
               itemId
               shopId
@@ -198,15 +198,17 @@ async function tryShopeeAffiliateApi(shopId: string, itemId: string, appId: stri
               imageUrl
               priceMin
               priceMax
+              originalPrice
+              discount
+              sales
+              commissionRate
             }
           }
         }
       `),
       variables: {
-        itemId: Number(itemId),
-        shopId: Number(shopId),
-        page: 1,
-        limit: 5,
+        itemId: itemId,
+        shopId: shopId,
       },
     });
 
@@ -245,16 +247,18 @@ async function tryShopeeAffiliateApi(shopId: string, itemId: string, appId: stri
 
       if (resp.ok) {
         const nodes = data?.data?.productOfferV2?.nodes || [];
-        const item = nodes.find((node: any) => String(node.itemId) === itemId && String(node.shopId) === shopId);
+        const item = nodes.find((node: any) => String(node.itemId) === itemId && String(node.shopId) === shopId) || nodes[0];
         if (item) {
           const name = item.productName || '';
           const priceNumber = Number(item.priceMin || item.priceMax || 0);
           const price = priceNumber > 0 ? `R$ ${(priceNumber / 100000).toFixed(2).replace('.', ',')}` : '';
+          const originalPriceNumber = Number(item.originalPrice || 0);
+          const originalPrice = originalPriceNumber > 0 && originalPriceNumber > priceNumber ? `R$ ${(originalPriceNumber / 100000).toFixed(2).replace('.', ',')}` : '';
           const imageUrl = item.imageUrl || '';
           const link = item.offerLink || item.productLink || '';
 
           console.log('Shopee Affiliate API success:', name);
-          return { product: { name, price, description: '', imageUrl, link } };
+          return { product: { name, price, originalPrice, description: '', imageUrl, link } };
         }
 
         if (nodes.length > 0) {
@@ -308,8 +312,10 @@ serve(async (req) => {
     }
 
     const { url, shopeeAppId, shopeeAppSecret } = body as { url?: string; shopeeAppId?: string; shopeeAppSecret?: string };
-    const normalizedShopeeAppId = typeof shopeeAppId === 'string' ? shopeeAppId.trim() : '';
-    const normalizedShopeeAppSecret = typeof shopeeAppSecret === 'string' ? shopeeAppSecret.trim() : '';
+    const HARDCODED_SHOPEE_APP_ID = '18393900790';
+    const HARDCODED_SHOPEE_APP_SECRET = 'IH2LRVG3OVQYFIFMU6R2772QQAY6XURW';
+    const normalizedShopeeAppId = (typeof shopeeAppId === 'string' && shopeeAppId.trim()) ? shopeeAppId.trim() : HARDCODED_SHOPEE_APP_ID;
+    const normalizedShopeeAppSecret = (typeof shopeeAppSecret === 'string' && shopeeAppSecret.trim()) ? shopeeAppSecret.trim() : HARDCODED_SHOPEE_APP_SECRET;
 
     if (!url || typeof url !== 'string' || url.trim().length === 0 || url.trim().length > 2048) {
       return new Response(
@@ -369,7 +375,7 @@ serve(async (req) => {
         let affiliateApiError = '';
 
         // Try affiliate API first if credentials provided
-        if (normalizedShopeeAppId && normalizedShopeeAppSecret) {
+        if (true) { // Always try affiliate API (hardcoded fallback)
           const affiliateResult = await tryShopeeAffiliateApi(shopId, itemId, normalizedShopeeAppId, normalizedShopeeAppSecret);
           affiliateApiError = affiliateResult.error || '';
           const affiliateData = affiliateResult.product;
