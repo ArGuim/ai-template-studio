@@ -245,15 +245,23 @@ async function tryShopeeAffiliateApi(shopId: string, itemId: string, appId: stri
         const nodes = data?.data?.productOfferV2?.nodes || [];
         const item = nodes.find((node: any) => String(node.itemId) === itemId && String(node.shopId) === shopId) || nodes[0];
         if (item) {
+          console.log('Shopee Affiliate raw item:', JSON.stringify(item));
           const name = item.productName || '';
           const priceMin = Number(item.priceMin || 0);
           const priceMax = Number(item.priceMax || 0);
-          const price = priceMin > 0 ? `R$ ${(priceMin / 100000).toFixed(2).replace('.', ',')}` : '';
-          const originalPrice = priceMax > priceMin && priceMin > 0 ? `R$ ${(priceMax / 100000).toFixed(2).replace('.', ',')}` : '';
+          // Try to detect price format: could be cents (divide by 100) or micro-units (divide by 100000)
+          const formatPrice = (v: number) => {
+            if (v <= 0) return '';
+            if (v > 100000) return `R$ ${(v / 100000).toFixed(2).replace('.', ',')}`;
+            if (v > 1000) return `R$ ${(v / 100).toFixed(2).replace('.', ',')}`;
+            return `R$ ${v.toFixed(2).replace('.', ',')}`;
+          };
+          const price = formatPrice(priceMin) || formatPrice(priceMax);
+          const originalPrice = priceMax > priceMin && priceMin > 0 ? formatPrice(priceMax) : '';
           const imageUrl = item.imageUrl || '';
           const link = item.offerLink || item.productLink || '';
 
-          console.log('Shopee Affiliate API success:', name);
+          console.log('Shopee Affiliate API success:', name, { price, originalPrice });
           return { product: { name, price, originalPrice, description: '', imageUrl, link } };
         }
 
