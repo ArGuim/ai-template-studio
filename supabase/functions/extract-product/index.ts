@@ -198,10 +198,6 @@ async function tryShopeeAffiliateApi(shopId: string, itemId: string, appId: stri
               imageUrl
               priceMin
               priceMax
-              originalPrice
-              discount
-              sales
-              commissionRate
             }
           }
         }
