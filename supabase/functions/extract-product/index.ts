@@ -247,15 +247,9 @@ async function tryShopeeAffiliateApi(shopId: string, itemId: string, appId: stri
         if (item) {
           console.log('Shopee Affiliate raw item:', JSON.stringify(item));
           const name = item.productName || '';
-          const priceMin = Number(item.priceMin || 0);
-          const priceMax = Number(item.priceMax || 0);
-          // Try to detect price format: could be cents (divide by 100) or micro-units (divide by 100000)
-          const formatPrice = (v: number) => {
-            if (v <= 0) return '';
-            if (v > 100000) return `R$ ${(v / 100000).toFixed(2).replace('.', ',')}`;
-            if (v > 1000) return `R$ ${(v / 100).toFixed(2).replace('.', ',')}`;
-            return `R$ ${v.toFixed(2).replace('.', ',')}`;
-          };
+          const priceMin = parseFloat(String(item.priceMin || '0'));
+          const priceMax = parseFloat(String(item.priceMax || '0'));
+          const formatPrice = (v: number) => v > 0 ? `R$ ${v.toFixed(2).replace('.', ',')}` : '';
           const price = formatPrice(priceMin) || formatPrice(priceMax);
           const originalPrice = priceMax > priceMin && priceMin > 0 ? formatPrice(priceMax) : '';
           const imageUrl = item.imageUrl || '';
