@@ -33,6 +33,23 @@ function decodeInlineJsString(value: string): string {
   }
 }
 
+function compactWhitespace(value: string): string {
+  return value.replace(/\s+/g, ' ').trim();
+}
+
+function maskCredential(value: string): string {
+  const normalized = value.trim();
+  if (!normalized) return 'missing';
+  if (normalized.length <= 6) return `${normalized.length} chars`;
+  return `${normalized.slice(0, 3)}…${normalized.slice(-2)} (${normalized.length} chars)`;
+}
+
+function buildShopeeAffiliateAuthHeader(appId: string, timestamp: string, signature: string, withSpaces: boolean): string {
+  return withSpaces
+    ? `SHA256 Credential=${appId}, Timestamp=${timestamp}, Signature=${signature}`
+    : `SHA256 Credential=${appId},Timestamp=${timestamp},Signature=${signature}`;
+}
+
 function extractShopeeRedirectUrl(html: string): string | null {
   const httpUrlMatch = html.match(/httpUrl\s*:\s*"([^"]+)"/i);
   if (httpUrlMatch?.[1]) {
@@ -159,25 +176,32 @@ async function tryShopeeApi(shopId: string, itemId: string): Promise<Record<stri
   return null;
 }
 
-async function tryShopeeAffiliateApi(shopId: string, itemId: string, appId: string, appSecret: string): Promise<Record<string, string> | null> {
+interface ShopeeAffiliateLookupResult {
+  product: Record<string, string> | null;
+  error?: string;
+}
+
+async function tryShopeeAffiliateApi(shopId: string, itemId: string, appId: string, appSecret: string): Promise<ShopeeAffiliateLookupResult> {
   try {
     const timestamp = Math.floor(Date.now() / 1000).toString();
     const payload = JSON.stringify({
       operationName: 'ProductByIds',
-      query: `query ProductByIds($itemId: Int, $shopId: Int, $page: Int!, $limit: Int!) {
-        productOfferV2(itemId: $itemId, shopId: $shopId, page: $page, limit: $limit) {
-          nodes {
-            itemId
-            shopId
-            productName
-            productLink
-            offerLink
-            imageUrl
-            priceMin
-            priceMax
+      query: compactWhitespace(`
+        query ProductByIds($itemId: Int64, $shopId: Int64, $page: Int!, $limit: Int!) {
+          productOfferV2(itemId: $itemId, shopId: $shopId, page: $page, limit: $limit) {
+            nodes {
+              itemId
+              shopId
+              productName
+              productLink
+              offerLink
+              imageUrl
+              priceMin
+              priceMax
+            }
           }
         }
-      }`,
+      `),
       variables: {
         itemId: Number(itemId),
         shopId: Number(shopId),
@@ -192,39 +216,79 @@ async function tryShopeeAffiliateApi(shopId: string, itemId: string, appId: stri
       .map((b) => b.toString(16).padStart(2, '0'))
       .join('');
 
-    console.log('Trying Shopee Affiliate API...');
-    const resp = await fetch('https://open-api.affiliate.shopee.com.br/graphql', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `SHA256 Credential=${appId}, Timestamp=${timestamp}, Signature=${signature}`,
-      },
-      body: payload,
+    console.log('Trying Shopee Affiliate API...', {
+      shopId,
+      itemId,
+      appId: maskCredential(appId),
+      appSecret: maskCredential(appSecret),
     });
 
-    if (resp.ok) {
-      const data = await resp.json();
-      const nodes = data?.data?.productOfferV2?.nodes || [];
-      const item = nodes.find((node: any) => String(node.itemId) === itemId && String(node.shopId) === shopId);
-      if (item) {
-        const name = item.productName || '';
-        const priceNumber = Number(item.priceMin || item.priceMax || 0);
-        const price = priceNumber > 0 ? `R$ ${(priceNumber / 100000).toFixed(2).replace('.', ',')}` : '';
-        const imageUrl = item.imageUrl || '';
-        const link = item.offerLink || item.productLink || '';
+    let lastError = 'Não foi possível consultar a API de afiliados da Shopee.';
 
-        console.log('Shopee Affiliate API success:', name);
-        return { name, price, description: '', imageUrl, link };
+    for (const withSpaces of [false, true]) {
+      const resp = await fetch('https://open-api.affiliate.shopee.com.br/graphql', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': buildShopeeAffiliateAuthHeader(appId, timestamp, signature, withSpaces),
+        },
+        body: payload,
+      });
+
+      const responseText = await resp.text();
+      let data: any = null;
+      try {
+        data = responseText ? JSON.parse(responseText) : null;
+      } catch {
+        data = null;
       }
-      console.log('Shopee Affiliate API returned no exact item match');
-    } else {
-      const errText = await resp.text();
-      console.log('Shopee Affiliate API error:', resp.status, errText);
+
+      if (resp.ok) {
+        const nodes = data?.data?.productOfferV2?.nodes || [];
+        const item = nodes.find((node: any) => String(node.itemId) === itemId && String(node.shopId) === shopId);
+        if (item) {
+          const name = item.productName || '';
+          const priceNumber = Number(item.priceMin || item.priceMax || 0);
+          const price = priceNumber > 0 ? `R$ ${(priceNumber / 100000).toFixed(2).replace('.', ',')}` : '';
+          const imageUrl = item.imageUrl || '';
+          const link = item.offerLink || item.productLink || '';
+
+          console.log('Shopee Affiliate API success:', name);
+          return { product: { name, price, description: '', imageUrl, link } };
+        }
+
+        if (nodes.length > 0) {
+          lastError = 'A Shopee respondeu, mas não encontrou esse produto nessas credenciais de afiliado.';
+          console.log('Shopee Affiliate API returned nodes, but no exact item match', { requestedShopId: shopId, requestedItemId: itemId, returnedCount: nodes.length });
+          continue;
+        }
+
+        const graphQLError = data?.errors?.[0]?.message || data?.error || data?.message;
+        if (graphQLError) {
+          lastError = `Shopee API: ${graphQLError}`;
+          console.log('Shopee Affiliate API GraphQL error:', graphQLError);
+          continue;
+        }
+
+        lastError = 'A Shopee respondeu sem dados para esse produto.';
+        continue;
+      }
+
+      const graphQLError = data?.errors?.[0]?.message || data?.error || data?.message;
+      lastError = graphQLError
+        ? `Shopee API: ${graphQLError}`
+        : `Shopee API respondeu com status ${resp.status}.`;
+      console.log('Shopee Affiliate API error:', {
+        status: resp.status,
+        withSpaces,
+        error: graphQLError || responseText,
+      });
     }
   } catch (e) {
     console.log('Shopee Affiliate API failed:', e);
+    return { product: null, error: 'Falha ao autenticar na API da Shopee. Confira App ID/App Secret e tente novamente.' };
   }
-  return null;
+  return { product: null, error: 'Falha ao autenticar na API da Shopee. Confira App ID/App Secret e tente novamente.' };
 }
 
 serve(async (req) => {
@@ -302,9 +366,13 @@ serve(async (req) => {
     if (isShopee) {
       const { shopId, itemId } = extractShopeeIdFromUrl(formattedUrl);
       if (shopId && itemId) {
+        let affiliateApiError = '';
+
         // Try affiliate API first if credentials provided
         if (normalizedShopeeAppId && normalizedShopeeAppSecret) {
-          const affiliateData = await tryShopeeAffiliateApi(shopId, itemId, normalizedShopeeAppId, normalizedShopeeAppSecret);
+          const affiliateResult = await tryShopeeAffiliateApi(shopId, itemId, normalizedShopeeAppId, normalizedShopeeAppSecret);
+          affiliateApiError = affiliateResult.error || '';
+          const affiliateData = affiliateResult.product;
           if (affiliateData && affiliateData.name && affiliateData.name !== '') {
             return new Response(
               JSON.stringify({
@@ -344,7 +412,7 @@ serve(async (req) => {
           JSON.stringify({
             success: false,
             error: normalizedShopeeAppId && normalizedShopeeAppSecret
-              ? 'Não foi possível consultar a Shopee pela API oficial. Verifique suas credenciais ou tente o link completo do produto.'
+              ? affiliateApiError || 'Não foi possível consultar a Shopee pela API oficial. Verifique suas credenciais ou tente o link completo do produto.'
               : 'Para extrair produtos da Shopee, configure seu App ID e App Secret em APIs de Lojas.',
           }),
           { status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
