@@ -384,6 +384,7 @@ serve(async (req) => {
                 product: {
                   name: affiliateData.name,
                   price: affiliateData.price,
+                  originalPrice: affiliateData.originalPrice || '',
                   description: affiliateData.description,
                   imageUrl: affiliateData.imageUrl,
                   link: affiliateData.link || formattedUrl,
