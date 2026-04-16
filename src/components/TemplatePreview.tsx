@@ -158,6 +158,12 @@ const TemplatePreview = ({ product, content: initialContent, onBack }: TemplateP
         return (
           <div className="w-[320px] rounded-2xl overflow-hidden" style={{ background: "white" }}>
             <div className="flex flex-col">
+              {showPrice && product.originalPrice && (
+                <div className="flex items-center gap-1.5 px-4 pt-2">
+                  <p className="text-[9px] line-through" style={{ color: "hsl(0,0%,55%)" }}>{product.originalPrice}</p>
+                  <p className="text-[11px] font-bold" style={{ color: "hsl(142,70%,35%)" }}>{product.price}</p>
+                </div>
+              )}
               <div className="flex items-center justify-center p-3" style={{ maxHeight: "240px" }}>
                 {renderContainedImage("max-w-full max-h-[220px] object-contain object-center")}
               </div>
@@ -166,15 +172,9 @@ const TemplatePreview = ({ product, content: initialContent, onBack }: TemplateP
                   {title.substring(0, 60)}
                 </p>
                 <p className="text-[9px] leading-snug" style={{ color: "hsl(0,0%,40%)" }}>{product.name}</p>
-                {showPrice && (
-                  <div className="flex items-center gap-1.5">
-                    {product.originalPrice && (
-                      <p className="text-[9px] line-through" style={{ color: "hsl(0,0%,55%)" }}>{product.originalPrice}</p>
-                    )}
-                    <p className="text-[11px] font-bold" style={{ color: "hsl(142,70%,35%)" }}>{product.price}</p>
-                  </div>
+                {showPrice && !product.originalPrice && (
+                  <p className="text-[11px] font-bold" style={{ color: "hsl(142,70%,35%)" }}>{product.price}</p>
                 )}
-                {renderQRCode()}
               </div>
             </div>
           </div>
