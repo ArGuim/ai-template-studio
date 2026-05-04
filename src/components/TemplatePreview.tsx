@@ -175,6 +175,7 @@ const TemplatePreview = ({ product, content: initialContent, onBack }: TemplateP
                 {showPrice && !product.originalPrice && (
                   <p className="text-[11px] font-bold" style={{ color: "hsl(142,70%,35%)" }}>{product.price}</p>
                 )}
+                <p className="text-[7px] mt-1" style={{ color: "hsl(0,0%,65%)" }}>Promoções sujeitas a alterações a qualquer momento.</p>
               </div>
             </div>
           </div>
@@ -201,6 +202,7 @@ const TemplatePreview = ({ product, content: initialContent, onBack }: TemplateP
                   {ctaText}
                 </p>
                 {renderQRCode()}
+                <p className="text-[7px]" style={{ color: "hsl(0,0%,65%)" }}>Promoções sujeitas a alterações a qualquer momento.</p>
               </div>
             </div>
           </div>
@@ -227,6 +229,7 @@ const TemplatePreview = ({ product, content: initialContent, onBack }: TemplateP
                   {ctaText}
                 </p>
                 {renderQRCode()}
+                <p className="text-[7px]" style={{ color: "hsl(0,0%,65%)" }}>Promoções sujeitas a alterações a qualquer momento.</p>
               </div>
             </div>
           </div>
