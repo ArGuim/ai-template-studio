@@ -76,7 +76,7 @@ Gere o conteúdo no seguinte formato JSON:
   "description": "descrição curta persuasiva",
   "cta": "call to action com emoji",
   "hashtags": ["hashtag1", "hashtag2", "hashtag3", "hashtag4", "hashtag5", "hashtag6"],
-  "caption": "legenda completa para post com quebras de linha"
+  "caption": "legenda completa para post com quebras de linha. DEVE terminar com a frase: Promoções sujeitas a alterações a qualquer momento."
 }`;
 
     const priceInfo = isAmazon ? '' : `Preço promocional: ${productPrice}\n${productOriginalPrice ? `Preço original (de): ${productOriginalPrice}\n` : ''}`;
