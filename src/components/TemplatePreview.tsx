@@ -76,7 +76,7 @@ const TemplatePreview = ({ product, content: initialContent, onBack }: TemplateP
   };
 
   const copyAll = () => {
-    const text = `${content.titles[0]}\n\n${content.description}\n\n${content.cta}\n\n🔗 ${product.link}\n\n${content.hashtags.map((h) => `#${h}`).join(" ")}`;
+    const text = `${content.titles[0]}\n\n${content.description}\n\n${content.cta}\n\n🔗 ${product.link}\n\n${content.hashtags.map((h) => `#${h}`).join(" ")}\n\nPromoções sujeitas a alterações a qualquer momento.`;
     navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
